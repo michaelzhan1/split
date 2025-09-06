@@ -9,35 +9,24 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/michaelzhan1/split/internals/handlers"
 )
 
 func main () {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	
-	pool, err := pgxpool.New(ctx, "postgres://postgres:postgres@localhost:5432/postgres")
+	db, err := pgxpool.New(ctx, "postgres://postgres:postgres@localhost:5432/postgres")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		os.Exit(1)
 	}
-	defer pool.Close()
+	defer db.Close()
 
 	r := chi.NewRouter()
 
 	r.Route("/parties", func(r chi.Router) {
-		r.Post("/", func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-
-			var name string
-			err := pool.QueryRow(ctx, "select name from member where id=$1", 1).Scan(&name)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			w.Write([]byte(name))
-		})
+		r.Post("/", handlers.PostCreateParty(db))
 		r.Delete("/{party_id}", func(w http.ResponseWriter, r *http.Request) {})
 
 		r.Get("/{party_id}/members", func(w http.ResponseWriter, r *http.Request) {})
