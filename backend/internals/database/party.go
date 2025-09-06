@@ -4,40 +4,40 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func CreateParty(ctx context.Context, db *pgxpool.Pool, name string) (int, error) {
+func CreateParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, name string) (int, error) {
 	query := "INSERT INTO party (name) VALUES ($1) RETURNING id"
 	args := []any{name}
 	
 	var id int
 	err := db.QueryRow(ctx, query, args...).Scan(&id)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Insert failed: %v\n", err)
+		L.Error(fmt.Sprintf("Insert failed: %v", err))
 		return 0, err
 	}
 	return id, nil
 }
 
-func DeleteParty(ctx context.Context, db *pgxpool.Pool, id int) error {
+func DeleteParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) error {
 	query := "DELETE FROM party WHERE id = $1"
 	args := []any{id}
 
 	cmdTag, err := db.Exec(ctx, query, args...)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Delete failed: %v\n", err)
+		L.Error(fmt.Sprintf("Delete failed: %v", err))
 		return err
 	}
 	if cmdTag.RowsAffected() > 1 {
-		fmt.Fprintf(os.Stderr, "Delete failed: more than one row affected\n")
+		L.Error("Delete failed: more than one row affected")
 		return errors.New("more than one row affected")
 	}
 	if cmdTag.RowsAffected() == 0 {
-		fmt.Fprintf(os.Stderr, "Delete failed: party %v does not exist\n", id)
+		L.Error(fmt.Sprintf("Delete failed: party %v does not exist", id))
 		return pgx.ErrNoRows
 	}
 	return nil

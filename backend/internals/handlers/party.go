@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,7 +14,7 @@ import (
 	"github.com/michaelzhan1/split/internals/database"
 )
 
-func PostCreateParty(db *pgxpool.Pool) http.HandlerFunc {
+func PostCreateParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	type request struct {
 		Name string `json:"name"`
 	}
@@ -31,7 +32,8 @@ func PostCreateParty(db *pgxpool.Pool) http.HandlerFunc {
 					Message: httpErrMsg,
 				}
 				data, _ := json.Marshal(httpErr)
-	
+				
+				L.Info(httpErrMsg, "code", httpErrCode)
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(httpErrCode)
 				w.Write(data)
@@ -48,9 +50,10 @@ func PostCreateParty(db *pgxpool.Pool) http.HandlerFunc {
 		if body.Name == "" {
 			httpErrCode = http.StatusBadRequest
 			httpErrMsg = "Empty name field"
+			return
 		}
 
-		id, err := database.CreateParty(ctx, db, body.Name)
+		id, err := database.CreateParty(ctx, db, L, body.Name)
 		if err != nil {
 			httpErrCode = http.StatusInternalServerError
 			httpErrMsg = "Internal server error"
@@ -65,7 +68,7 @@ func PostCreateParty(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-func DeleteParty(db *pgxpool.Pool) http.HandlerFunc {
+func DeleteParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -79,7 +82,7 @@ func DeleteParty(db *pgxpool.Pool) http.HandlerFunc {
 					Message: httpErrMsg,
 				}
 				data, _ := json.Marshal(httpErr)
-	
+				L.Info(httpErrMsg, "code", httpErrCode)
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(httpErrCode)
 				w.Write(data)
@@ -99,7 +102,7 @@ func DeleteParty(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		err = database.DeleteParty(ctx, db, partyIdInt)
+		err = database.DeleteParty(ctx, db, L, partyIdInt)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpErrCode = http.StatusNotFound
