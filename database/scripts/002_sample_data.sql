@@ -1,7 +1,7 @@
 -- insert party and member
 WITH new_party AS (
     INSERT INTO party (name)
-    VALUES ("Test party name")
+    VALUES ('Test party name')
     RETURNING id AS party_id
 ), new_member AS (
     INSERT INTO member (party_id, name)

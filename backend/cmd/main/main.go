@@ -8,19 +8,19 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main () {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	
-	conn, err := pgx.Connect(ctx, "postgres://postgres:postgres@localhost:5432/postgres")
+	pool, err := pgxpool.New(ctx, "postgres://postgres:postgres@localhost:5432/postgres")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		os.Exit(1)
 	}
-	defer conn.Close(ctx)
+	defer pool.Close()
 
 	r := chi.NewRouter()
 
@@ -29,7 +29,7 @@ func main () {
 			ctx := r.Context()
 
 			var name string
-			err = conn.QueryRow(ctx, "select name from member where id=$1", 1).Scan(&name)
+			err := pool.QueryRow(ctx, "select name from member where id=$1", 1).Scan(&name)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
 				w.WriteHeader(http.StatusInternalServerError)
