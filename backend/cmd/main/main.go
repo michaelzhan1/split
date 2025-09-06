@@ -27,7 +27,7 @@ func main () {
 
 	r.Route("/parties", func(r chi.Router) {
 		r.Post("/", handlers.PostCreateParty(db))
-		r.Delete("/{party_id}", func(w http.ResponseWriter, r *http.Request) {})
+		r.Delete("/{party_id}", handlers.DeleteParty(db))
 
 		r.Get("/{party_id}/members", func(w http.ResponseWriter, r *http.Request) {})
 		r.Post("/{party_id}/members", func(w http.ResponseWriter, r *http.Request) {})

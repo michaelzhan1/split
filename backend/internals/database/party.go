@@ -2,9 +2,11 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -19,4 +21,24 @@ func CreateParty(ctx context.Context, db *pgxpool.Pool, name string) (int, error
 		return 0, err
 	}
 	return id, nil
+}
+
+func DeleteParty(ctx context.Context, db *pgxpool.Pool, id int) error {
+	query := "DELETE FROM party WHERE id = $1"
+	args := []any{id}
+
+	cmdTag, err := db.Exec(ctx, query, args...)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Delete failed: %v\n", err)
+		return err
+	}
+	if cmdTag.RowsAffected() > 1 {
+		fmt.Fprintf(os.Stderr, "Delete failed: more than one row affected\n")
+		return errors.New("more than one row affected")
+	}
+	if cmdTag.RowsAffected() == 0 {
+		fmt.Fprintf(os.Stderr, "Delete failed: party %v does not exist\n", id)
+		return pgx.ErrNoRows
+	}
+	return nil
 }
