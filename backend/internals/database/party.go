@@ -10,6 +10,25 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+func GetPartyById(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) (Party, error) {
+	query := "SELECT name FROM party WHERE party.id = $1"
+	args := []any{id}
+
+	rows, err := db.Query(ctx, query, args...)
+	if err != nil {
+		L.Error(fmt.Sprintf("Get failed: %v", err))
+		return Party{}, err
+	}
+
+	party, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[Party])
+	if err != nil {
+		L.Error(fmt.Sprintf("Binding failed: %v", err))
+		return Party{}, err
+	}
+
+	return party, nil
+}
+
 func CreateParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, name string) (int, error) {
 	tx, err := db.Begin(ctx)
 	if err != nil {

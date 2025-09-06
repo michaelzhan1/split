@@ -5,6 +5,10 @@ type HttpError struct {
 	Message string `json:"message"`
 }
 
+type GetPartyResponse struct {
+	Name string `json:"name"`
+}
+
 type CreatePartyResponse struct {
 	Id int `json:"id"`
 }

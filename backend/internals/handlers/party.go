@@ -14,6 +14,61 @@ import (
 	"github.com/michaelzhan1/split/internals/database"
 )
 
+func GetParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		var httpErrCode int
+		var httpErrMsg string
+		defer func() {
+			if httpErrCode != 0 {
+				httpErr := HttpError{
+					Code:    httpErrCode,
+					Message: httpErrMsg,
+				}
+				data, _ := json.Marshal(httpErr)
+				L.Info(httpErrMsg, "code", httpErrCode)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(httpErrCode)
+				w.Write(data)
+			}
+		}()
+
+		partyId := chi.URLParam(r, "party_id")
+		if partyId == "" {
+			httpErrCode = http.StatusBadRequest
+			httpErrMsg = "Empty or missing party ID"
+			return
+		}
+		partyIdInt, err := strconv.Atoi(partyId)
+		if err != nil || partyIdInt <= 0 {
+			httpErrCode = http.StatusBadRequest
+			httpErrMsg = "Bad party ID"
+			return
+		}
+
+		party, err := database.GetPartyById(ctx, db, L, partyIdInt)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				httpErrCode = http.StatusNotFound
+				httpErrMsg = "Not found"
+				return
+			} else {
+				httpErrCode = http.StatusInternalServerError
+				httpErrMsg = "Internal server error"
+				return
+			}
+		}
+
+		res := toPartyView(party)
+		data, _ := json.Marshal(res)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	}
+}
+
 func CreateParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	type request struct {
 		Name string `json:"name"`
@@ -32,7 +87,7 @@ func CreateParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 					Message: httpErrMsg,
 				}
 				data, _ := json.Marshal(httpErr)
-				
+
 				L.Info(httpErrMsg, "code", httpErrCode)
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(httpErrCode)

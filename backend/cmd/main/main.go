@@ -30,6 +30,7 @@ func main() {
 	r.Use(logs.RequestLogger(L))
 
 	r.Route("/parties", func(r chi.Router) {
+		r.Get("/{party_id}", handlers.GetParty(db, L))
 		r.Post("/", handlers.CreateParty(db, L))
 		r.Delete("/{party_id}", handlers.DeleteParty(db, L))
 
