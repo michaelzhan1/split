@@ -4,7 +4,8 @@ DROP TABLE IF EXISTS payment;
 DROP TABLE IF EXISTS member_payment;
 
 CREATE TABLE party (
-    id SERIAL PRIMARY KEY
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL
 );
 
 CREATE TABLE member (

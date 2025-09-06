@@ -1,10 +1,11 @@
 -- insert party and member
 WITH new_party AS (
-    INSERT INTO party DEFAULT VALUES
+    INSERT INTO party (name)
+    VALUES ("Test party name")
     RETURNING id AS party_id
 ), new_member AS (
     INSERT INTO member (party_id, name)
-    SELECT party_id, 'Test name'
+    SELECT party_id, 'Test member name'
     FROM new_party
     RETURNING id AS member_id, party_id
 ), new_payment AS (
