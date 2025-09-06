@@ -123,6 +123,60 @@ func CreateParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	}
 }
 
+func PatchParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
+	type request struct {
+		Name *string `json:"name"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		var httpErrCode int
+		var httpErrMsg string
+		defer func() {
+			if httpErrCode != 0 {
+				httpErr := HttpError{
+					Code:    httpErrCode,
+					Message: httpErrMsg,
+				}
+				data, _ := json.Marshal(httpErr)
+
+				L.Info(httpErrMsg, "code", httpErrCode)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(httpErrCode)
+				w.Write(data)
+			}
+		}()
+
+		var body request
+		err := json.NewDecoder(r.Body).Decode(&body)
+		if err != nil {
+			httpErrCode = http.StatusBadRequest
+			httpErrMsg = "Invalid JSON"
+			return
+		}
+		// TODO: handle nil body name
+		if body.Name == "" {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		id, err := database.CreateParty(ctx, db, L, body.Name)
+		if err != nil {
+			httpErrCode = http.StatusInternalServerError
+			httpErrMsg = "Internal server error"
+			return
+		}
+
+		res := CreatePartyResponse{id}
+		data, _ := json.Marshal(res)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		w.Write(data)
+	}
+}
+
 func DeleteParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)

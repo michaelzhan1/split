@@ -29,7 +29,7 @@ func GetPartyById(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int)
 	return party, nil
 }
 
-func CreateParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, name string) (int, error) {
+func PatchParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, name string) (int, error) {
 	tx, err := db.Begin(ctx)
 	if err != nil {
 		return 0, err
