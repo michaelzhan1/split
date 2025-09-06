@@ -14,7 +14,7 @@ import (
 	"github.com/michaelzhan1/split/internals/database"
 )
 
-func PostCreateParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
+func CreateParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	type request struct {
 		Name string `json:"name"`
 	}
