@@ -27,3 +27,19 @@ func GetMembersByPartyId(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, 
 
 	return members, nil
 }
+
+func AddMemberToPartyById(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyId int, name string) (int, error) {
+	return WithTx(ctx, db, func(tx pgx.Tx) (int, error) {
+		query := "INSERT INTO member (party_id, name) values ($1, $2) RETURNING id"
+		args := []any{partyId, name}
+
+		var id int
+		err := tx.QueryRow(ctx, query, args...).Scan(&id)
+		if err != nil {
+			L.Error(fmt.Sprintf("Insert failed: %v", err))
+			return 0, err
+		}
+
+		return id, nil
+	})
+}

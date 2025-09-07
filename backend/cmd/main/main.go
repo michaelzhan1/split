@@ -36,7 +36,7 @@ func main() {
 		r.Delete("/{party_id}", handlers.DeleteParty(db, L))
 
 		r.Get("/{party_id}/members", handlers.GetMembers(db, L))
-		r.Post("/{party_id}/members", func(w http.ResponseWriter, r *http.Request) {})
+		r.Post("/{party_id}/members", handlers.AddMember(db, L))
 		r.Patch("/{party_id}/members", func(w http.ResponseWriter, r *http.Request) {})
 		r.Delete("/{party_id}/members", func(w http.ResponseWriter, r *http.Request) {})
 
