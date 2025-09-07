@@ -30,69 +30,42 @@ func GetPartyById(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int)
 }
 
 func CreateParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, name string) (int, error) {
-	tx, err := db.Begin(ctx)
-	if err != nil {
-		return 0, err
-	}
+	return WithTx(ctx, db, func(tx pgx.Tx) (int, error) {
+		query := "INSERT INTO party (name) VALUES ($1) RETURNING id"
+		args := []any{name}
 
-	defer func() {
+		var id int
+		err := tx.QueryRow(ctx, query, args...).Scan(&id)
 		if err != nil {
-			tx.Rollback(ctx)
+			L.Error(fmt.Sprintf("Insert failed: %v", err))
+			return 0, err
 		}
-	}()
 
-	query := "INSERT INTO party (name) VALUES ($1) RETURNING id"
-	args := []any{name}
-
-	var id int
-	err = tx.QueryRow(ctx, query, args...).Scan(&id)
-	if err != nil {
-		L.Error(fmt.Sprintf("Insert failed: %v", err))
-		return 0, err
-	}
-
-	err = tx.Commit(ctx)
-	if err != nil {
-		L.Error(fmt.Sprintf("Commit failed: %v\n", err))
-		return 0, err
-	}
-
-	return id, nil
+		return id, nil
+	})
 }
 
 func DeleteParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) error {
-	tx, err := db.Begin(ctx)
-	if err != nil {
-		return err
-	}
+	_, err := WithTx(ctx, db, func(tx pgx.Tx) (struct{}, error) {
+		query := "DELETE FROM party WHERE id = $1"
+		args := []any{id}
 
-	defer func() {
+		cmdTag, err := tx.Exec(ctx, query, args...)
 		if err != nil {
-			tx.Rollback(ctx)
+			L.Error(fmt.Sprintf("Delete failed: %v", err))
+			return struct{}{}, err
 		}
-	}()
+		if cmdTag.RowsAffected() > 1 {
+			L.Error("Delete failed: more than one row affected")
+			return struct{}{}, errors.New("more than one row affected")
+		}
+		if cmdTag.RowsAffected() == 0 {
+			L.Error(fmt.Sprintf("Delete failed: party %v does not exist", id))
+			return struct{}{}, pgx.ErrNoRows
+		}
 
-	query := "DELETE FROM party WHERE id = $1"
-	args := []any{id}
+		return struct{}{}, nil
+	})
 
-	cmdTag, err := tx.Exec(ctx, query, args...)
-	if err != nil {
-		L.Error(fmt.Sprintf("Delete failed: %v", err))
-		return err
-	}
-	if cmdTag.RowsAffected() > 1 {
-		L.Error("Delete failed: more than one row affected")
-		return errors.New("more than one row affected")
-	}
-	if cmdTag.RowsAffected() == 0 {
-		L.Error(fmt.Sprintf("Delete failed: party %v does not exist", id))
-		return pgx.ErrNoRows
-	}
-
-	err = tx.Commit(ctx)
-	if err != nil {
-		L.Error(fmt.Sprintf("Commit failed: %v\n", err))
-		return err
-	}
-	return nil
+	return err
 }
