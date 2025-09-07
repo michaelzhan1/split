@@ -5,6 +5,10 @@ type HttpError struct {
 	Message string `json:"message"`
 }
 
+func (error *HttpError) Error() string {
+	return error.Message
+}
+
 type Party struct {
 	Name string `json:"name"`
 }

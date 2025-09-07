@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/michaelzhan1/split/internals/database"
@@ -30,24 +28,12 @@ func GetMembers(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId := chi.URLParam(r, "party_id")
-		if partyId == "" {
-			httpError = &HttpError{
-				Code:    http.StatusBadRequest,
-				Message: "Empty or missing party ID",
-			}
-			return
-		}
-		partyIdInt, err := strconv.Atoi(partyId)
-		if err != nil || partyIdInt <= 0 {
-			httpError = &HttpError{
-				Code:    http.StatusBadRequest,
-				Message: "Bad party ID",
-			}
+		partyId, httpError := withPartyId(r)
+		if httpError != nil {
 			return
 		}
 
-		_, err = database.GetPartyById(ctx, db, L, partyIdInt)
+		_, err := database.GetPartyById(ctx, db, L, partyId)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -63,7 +49,7 @@ func GetMembers(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		members, err := database.GetMembersByPartyId(ctx, db, L, partyIdInt)
+		members, err := database.GetMembersByPartyId(ctx, db, L, partyId)
 		if err != nil {
 			httpError = &HttpError{
 				Code:    http.StatusInternalServerError,

@@ -1,6 +1,30 @@
 package handlers
 
-import "github.com/michaelzhan1/split/internals/database"
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/michaelzhan1/split/internals/database"
+)
+
+func withPartyId(r *http.Request) (int, *HttpError) {
+	partyIDStr := chi.URLParam(r, "party_id")
+	if partyIDStr == "" {
+		return 0, &HttpError{
+			Code:    http.StatusBadRequest,
+			Message: "Empty or missing party ID",
+		}
+	}
+	partyIDInt, err := strconv.Atoi(partyIDStr)
+	if err != nil || partyIDInt <= 0 {
+		return 0, &HttpError{
+			Code:    http.StatusBadRequest,
+			Message: "Bad party ID",
+		}
+	}
+	return partyIDInt, nil
+}
 
 func toPartyView(party database.Party) Party {
 	return Party{Name: party.Name}

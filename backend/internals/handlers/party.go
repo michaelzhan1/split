@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/michaelzhan1/split/internals/database"
@@ -30,24 +28,12 @@ func GetParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId := chi.URLParam(r, "party_id")
-		if partyId == "" {
-			httpError = &HttpError{
-				Code:    http.StatusBadRequest,
-				Message: "Empty or missing party ID",
-			}
-			return
-		}
-		partyIdInt, err := strconv.Atoi(partyId)
-		if err != nil || partyIdInt <= 0 {
-			httpError = &HttpError{
-				Code:    http.StatusBadRequest,
-				Message: "Bad party ID",
-			}
+		partyId, httpError := withPartyId(r)
+		if httpError != nil {
 			return
 		}
 
-		party, err := database.GetPartyById(ctx, db, L, partyIdInt)
+		party, err := database.GetPartyById(ctx, db, L, partyId)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -149,25 +135,13 @@ func PatchParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId := chi.URLParam(r, "party_id")
-		if partyId == "" {
-			httpError = &HttpError{
-				Code:    http.StatusBadRequest,
-				Message: "Empty or missing party ID",
-			}
-			return
-		}
-		partyIdInt, err := strconv.Atoi(partyId)
-		if err != nil || partyIdInt <= 0 {
-			httpError = &HttpError{
-				Code:    http.StatusBadRequest,
-				Message: "Bad party ID",
-			}
+		partyId, httpError := withPartyId(r)
+		if httpError != nil {
 			return
 		}
 
 		var body request
-		err = json.NewDecoder(r.Body).Decode(&body)
+		err := json.NewDecoder(r.Body).Decode(&body)
 		if err != nil {
 			httpError = &HttpError{
 				Code:    http.StatusBadRequest,
@@ -187,7 +161,7 @@ func PatchParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		err = database.PatchParty(ctx, db, L, partyIdInt, *body.Name)
+		err = database.PatchParty(ctx, db, L, partyId, *body.Name)
 		if err != nil {
 			httpError = &HttpError{
 				Code:    http.StatusInternalServerError,
@@ -218,24 +192,12 @@ func DeleteParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId := chi.URLParam(r, "party_id")
-		if partyId == "" {
-			httpError = &HttpError{
-				Code:    http.StatusBadRequest,
-				Message: "Empty or missing party ID",
-			}
-			return
-		}
-		partyIdInt, err := strconv.Atoi(partyId)
-		if err != nil || partyIdInt <= 0 {
-			httpError = &HttpError{
-				Code:    http.StatusBadRequest,
-				Message: "Bad Party ID",
-			}
+		partyId, httpError := withPartyId(r)
+		if httpError != nil {
 			return
 		}
 
-		err = database.DeleteParty(ctx, db, L, partyIdInt)
+		err := database.DeleteParty(ctx, db, L, partyId)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
