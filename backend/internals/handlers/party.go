@@ -19,46 +19,48 @@ func GetParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var httpErrCode int
-		var httpErrMsg string
+		var httpError *HttpError
 		defer func() {
-			if httpErrCode != 0 {
-				httpErr := HttpError{
-					Code:    httpErrCode,
-					Message: httpErrMsg,
-				}
-				data, _ := json.Marshal(httpErr)
-				L.Info(httpErrMsg, "code", httpErrCode)
+			if httpError != nil {
+				data, _ := json.Marshal(httpError)
+				L.Info(httpError.Message, "code", httpError.Code)
 				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(httpErrCode)
+				w.WriteHeader(httpError.Code)
 				w.Write(data)
 			}
 		}()
 
 		partyId := chi.URLParam(r, "party_id")
 		if partyId == "" {
-			httpErrCode = http.StatusBadRequest
-			httpErrMsg = "Empty or missing party ID"
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Empty or missing party ID",
+			}
 			return
 		}
 		partyIdInt, err := strconv.Atoi(partyId)
 		if err != nil || partyIdInt <= 0 {
-			httpErrCode = http.StatusBadRequest
-			httpErrMsg = "Bad party ID"
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Bad party ID",
+			}
 			return
 		}
 
 		party, err := database.GetPartyById(ctx, db, L, partyIdInt)
 		if err != nil {
 			if err == pgx.ErrNoRows {
-				httpErrCode = http.StatusNotFound
-				httpErrMsg = "Not found"
-				return
+				httpError = &HttpError{
+					Code:    http.StatusNotFound,
+					Message: "Not found",
+				}
 			} else {
-				httpErrCode = http.StatusInternalServerError
-				httpErrMsg = "Internal server error"
-				return
+				httpError = &HttpError{
+					Code:    http.StatusInternalServerError,
+					Message: "Internal server error",
+				}
 			}
+			return
 		}
 
 		res := toPartyView(party)
@@ -82,19 +84,13 @@ func CreateParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var httpErrCode int
-		var httpErrMsg string
+		var httpError *HttpError
 		defer func() {
-			if httpErrCode != 0 {
-				httpErr := HttpError{
-					Code:    httpErrCode,
-					Message: httpErrMsg,
-				}
-				data, _ := json.Marshal(httpErr)
-
-				L.Info(httpErrMsg, "code", httpErrCode)
+			if httpError != nil {
+				data, _ := json.Marshal(httpError)
+				L.Info(httpError.Message, "code", httpError.Code)
 				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(httpErrCode)
+				w.WriteHeader(httpError.Code)
 				w.Write(data)
 			}
 		}()
@@ -102,20 +98,26 @@ func CreateParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 		var body request
 		err := json.NewDecoder(r.Body).Decode(&body)
 		if err != nil {
-			httpErrCode = http.StatusBadRequest
-			httpErrMsg = "Invalid JSON"
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Invalid JSON",
+			}
 			return
 		}
 		if body.Name == "" {
-			httpErrCode = http.StatusBadRequest
-			httpErrMsg = "Empty name field"
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Empty name field",
+			}
 			return
 		}
 
 		id, err := database.CreateParty(ctx, db, L, body.Name)
 		if err != nil {
-			httpErrCode = http.StatusInternalServerError
-			httpErrMsg = "Internal server error"
+			httpError = &HttpError{
+				Code:    http.StatusInternalServerError,
+				Message: "Internal server error",
+			}
 			return
 		}
 
@@ -136,41 +138,41 @@ func PatchParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var httpErrCode int
-		var httpErrMsg string
+		var httpError *HttpError
 		defer func() {
-			if httpErrCode != 0 {
-				httpErr := HttpError{
-					Code:    httpErrCode,
-					Message: httpErrMsg,
-				}
-				data, _ := json.Marshal(httpErr)
-
-				L.Info(httpErrMsg, "code", httpErrCode)
+			if httpError != nil {
+				data, _ := json.Marshal(httpError)
+				L.Info(httpError.Message, "code", httpError.Code)
 				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(httpErrCode)
+				w.WriteHeader(httpError.Code)
 				w.Write(data)
 			}
 		}()
 
 		partyId := chi.URLParam(r, "party_id")
 		if partyId == "" {
-			httpErrCode = http.StatusBadRequest
-			httpErrMsg = "Empty or missing party ID"
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Empty or missing party ID",
+			}
 			return
 		}
 		partyIdInt, err := strconv.Atoi(partyId)
 		if err != nil || partyIdInt <= 0 {
-			httpErrCode = http.StatusBadRequest
-			httpErrMsg = "Bad party ID"
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Bad party ID",
+			}
 			return
 		}
 
 		var body request
 		err = json.NewDecoder(r.Body).Decode(&body)
 		if err != nil {
-			httpErrCode = http.StatusBadRequest
-			httpErrMsg = "Invalid JSON"
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Invalid JSON",
+			}
 			return
 		}
 		if body.Name == nil {
@@ -178,15 +180,19 @@ func PatchParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 		if body.Name != nil && *body.Name == "" {
-			httpErrCode = http.StatusBadRequest
-			httpErrMsg = "Empty name field"
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Empty name field",
+			}
 			return
 		}
 
 		err = database.PatchParty(ctx, db, L, partyIdInt, *body.Name)
 		if err != nil {
-			httpErrCode = http.StatusInternalServerError
-			httpErrMsg = "Internal server error"
+			httpError = &HttpError{
+				Code:    http.StatusInternalServerError,
+				Message: "Internal server error",
+			}
 			return
 		}
 
@@ -201,46 +207,48 @@ func DeleteParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var httpErrCode int
-		var httpErrMsg string
+		var httpError *HttpError
 		defer func() {
-			if httpErrCode != 0 {
-				httpErr := HttpError{
-					Code:    httpErrCode,
-					Message: httpErrMsg,
-				}
-				data, _ := json.Marshal(httpErr)
-				L.Info(httpErrMsg, "code", httpErrCode)
+			if httpError != nil {
+				data, _ := json.Marshal(httpError)
+				L.Info(httpError.Message, "code", httpError.Code)
 				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(httpErrCode)
+				w.WriteHeader(httpError.Code)
 				w.Write(data)
 			}
 		}()
 
 		partyId := chi.URLParam(r, "party_id")
 		if partyId == "" {
-			httpErrCode = http.StatusBadRequest
-			httpErrMsg = "Empty or missing party ID"
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Empty or missing party ID",
+			}
 			return
 		}
 		partyIdInt, err := strconv.Atoi(partyId)
 		if err != nil || partyIdInt <= 0 {
-			httpErrCode = http.StatusBadRequest
-			httpErrMsg = "Bad party ID"
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Bad Party ID",
+			}
 			return
 		}
 
 		err = database.DeleteParty(ctx, db, L, partyIdInt)
 		if err != nil {
 			if err == pgx.ErrNoRows {
-				httpErrCode = http.StatusNotFound
-				httpErrMsg = "Not found"
-				return
+				httpError = &HttpError{
+					Code:    http.StatusNotFound,
+					Message: "Not found",
+				}
 			} else {
-				httpErrCode = http.StatusInternalServerError
-				httpErrMsg = "Internal server error"
-				return
+				httpError = &HttpError{
+					Code:    http.StatusInternalServerError,
+					Message: "Internal server error",
+				}
 			}
+			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)

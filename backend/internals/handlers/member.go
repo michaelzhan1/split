@@ -19,51 +19,56 @@ func GetMembers(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var httpErrCode int
-		var httpErrMsg string
+		var httpError *HttpError
 		defer func() {
-			if httpErrCode != 0 {
-				httpErr := HttpError{
-					Code:    httpErrCode,
-					Message: httpErrMsg,
-				}
-				data, _ := json.Marshal(httpErr)
-				L.Info(httpErrMsg, "code", httpErrCode)
+			if httpError != nil {
+				data, _ := json.Marshal(httpError)
+				L.Info(httpError.Message, "code", httpError.Code)
 				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(httpErrCode)
+				w.WriteHeader(httpError.Code)
 				w.Write(data)
 			}
 		}()
 
 		partyId := chi.URLParam(r, "party_id")
 		if partyId == "" {
-			httpErrCode = http.StatusBadRequest
-			httpErrMsg = "Empty or missing party ID"
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Empty or missing party ID",
+			}
 			return
 		}
 		partyIdInt, err := strconv.Atoi(partyId)
 		if err != nil || partyIdInt <= 0 {
-			httpErrCode = http.StatusBadRequest
-			httpErrMsg = "Bad party ID"
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Bad party ID",
+			}
 			return
 		}
 
 		_, err = database.GetPartyById(ctx, db, L, partyIdInt)
 		if err != nil {
 			if err == pgx.ErrNoRows {
-				httpErrCode = http.StatusNotFound
-				httpErrMsg = "Not found"
-				return
+				httpError = &HttpError{
+					Code:    http.StatusNotFound,
+					Message: "Not found",
+				}
 			} else {
-				httpErrCode = http.StatusInternalServerError
-				httpErrMsg = "Internal server error"
+				httpError = &HttpError{
+					Code:    http.StatusInternalServerError,
+					Message: "Internal server error",
+				}
 			}
+			return
 		}
 
 		members, err := database.GetMembersByPartyId(ctx, db, L, partyIdInt)
 		if err != nil {
-			httpErrCode = http.StatusInternalServerError
-			httpErrMsg = "Internal server error"
+			httpError = &HttpError{
+				Code:    http.StatusInternalServerError,
+				Message: "Internal server error",
+			}
 			return
 		}
 
