@@ -74,6 +74,10 @@ func CreateParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 		Name string `json:"name"`
 	}
 
+	type response struct {
+		Id int `json:"id"`
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -115,7 +119,7 @@ func CreateParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		res := CreatePartyResponse{id}
+		res := response{id}
 		data, _ := json.Marshal(res)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
