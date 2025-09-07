@@ -45,6 +45,30 @@ func CreateParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, name str
 	})
 }
 
+func PatchParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int, name string) error {
+	_, err := WithTx(ctx, db, func(tx pgx.Tx) (struct{}, error) {
+		query := "UPDATE party SET name = $1 WHERE id = $2"
+		args := []any{name, id}
+
+		cmdTag, err := tx.Exec(ctx, query, args...)
+		if err != nil {
+			L.Error(fmt.Sprintf("Patch failed: %v", err))
+			return struct{}{}, err
+		}
+		if cmdTag.RowsAffected() > 1 {
+			L.Error("Patch failed: more than one row affected")
+			return struct{}{}, errors.New("more than one row affected")
+		}
+		if cmdTag.RowsAffected() == 0 {
+			L.Error(fmt.Sprintf("Patch failed: party %v does not exist", id))
+			return struct{}{}, pgx.ErrNoRows
+		}
+
+		return struct{}{}, nil
+	})
+	return err
+}
+
 func DeleteParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) error {
 	_, err := WithTx(ctx, db, func(tx pgx.Tx) (struct{}, error) {
 		query := "DELETE FROM party WHERE id = $1"

@@ -123,6 +123,75 @@ func CreateParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	}
 }
 
+func PatchParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
+	type request struct {
+		Name *string `json:"name"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		var httpErrCode int
+		var httpErrMsg string
+		defer func() {
+			if httpErrCode != 0 {
+				httpErr := HttpError{
+					Code:    httpErrCode,
+					Message: httpErrMsg,
+				}
+				data, _ := json.Marshal(httpErr)
+
+				L.Info(httpErrMsg, "code", httpErrCode)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(httpErrCode)
+				w.Write(data)
+			}
+		}()
+
+		partyId := chi.URLParam(r, "party_id")
+		if partyId == "" {
+			httpErrCode = http.StatusBadRequest
+			httpErrMsg = "Empty or missing party ID"
+			return
+		}
+		partyIdInt, err := strconv.Atoi(partyId)
+		if err != nil || partyIdInt <= 0 {
+			httpErrCode = http.StatusBadRequest
+			httpErrMsg = "Bad party ID"
+			return
+		}
+
+		var body request
+		err = json.NewDecoder(r.Body).Decode(&body)
+		if err != nil {
+			httpErrCode = http.StatusBadRequest
+			httpErrMsg = "Invalid JSON"
+			return
+		}
+		if body.Name == nil {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		if body.Name != nil && *body.Name == "" {
+			httpErrCode = http.StatusBadRequest
+			httpErrMsg = "Empty name field"
+			return
+		}
+
+		err = database.PatchParty(ctx, db, L, partyIdInt, *body.Name)
+		if err != nil {
+			httpErrCode = http.StatusInternalServerError
+			httpErrMsg = "Internal server error"
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("{}"))
+	}
+}
+
 func DeleteParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
