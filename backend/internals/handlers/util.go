@@ -26,6 +26,23 @@ func withPartyId(r *http.Request) (int, *HttpError) {
 	return partyIDInt, nil
 }
 
+func withMemberId(r *http.Request) (int, *HttpError) {
+	memberIDStr := chi.URLParam(r, "member_id")
+	if memberIDStr == "" {
+		return 0, &HttpError{
+			Code:    http.StatusBadRequest,
+			Message: "Empty or missing member ID",
+		}
+	}
+	memberIDInt, err := strconv.Atoi(memberIDStr)
+	if err != nil || memberIDInt <= 0 {
+		return 0, &HttpError{
+			Code:    http.StatusBadRequest,
+			Message: "Bad member ID",
+		}
+	}
+	return memberIDInt, nil
+}
 func toPartyView(party database.Party) Party {
 	return Party{Name: party.Name}
 }

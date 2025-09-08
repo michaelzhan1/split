@@ -37,8 +37,8 @@ func main() {
 
 		r.Get("/{party_id}/members", handlers.GetMembers(db, L))
 		r.Post("/{party_id}/members", handlers.AddMember(db, L))
-		r.Patch("/{party_id}/members", func(w http.ResponseWriter, r *http.Request) {})
-		r.Delete("/{party_id}/members", func(w http.ResponseWriter, r *http.Request) {})
+		r.Patch("/{party_id}/members/{member_id}", handlers.PatchMember(db, L))
+		r.Delete("/{party_id}/members/{member_id}", func(w http.ResponseWriter, r *http.Request) {})
 
 		r.Post("/{party_id}/calculate", func(w http.ResponseWriter, r *http.Request) {})
 	})

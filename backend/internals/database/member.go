@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -42,4 +43,28 @@ func AddMemberToPartyById(ctx context.Context, db *pgxpool.Pool, L *slog.Logger,
 
 		return id, nil
 	})
+}
+
+func PatchMember(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyId int, memberId int, name string) error {
+	_, err := WithTx(ctx, db, func(tx pgx.Tx) (struct{}, error) {
+		query := "UPDATE member SET name = $1 WHERE id = $2 AND party_id = $3"
+		args := []any{name, memberId, partyId}
+
+		cmdTag, err := tx.Exec(ctx, query, args...)
+		if err != nil {
+			L.Error(fmt.Sprintf("Patch failed: %v", err))
+			return struct{}{}, err
+		}
+		if cmdTag.RowsAffected() > 1 {
+			L.Error("Patch failed: more than one row affected")
+			return struct{}{}, errors.New("more than one row affected")
+		}
+		if cmdTag.RowsAffected() == 0 {
+			L.Error(fmt.Sprintf("Patch failed: member %v does not exist", memberId))
+			return struct{}{}, pgx.ErrNoRows
+		}
+
+		return struct{}{}, nil
+	})
+	return err
 }
