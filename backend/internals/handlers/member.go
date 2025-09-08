@@ -3,11 +3,13 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/michaelzhan1/split/internals/database"
 )
@@ -216,7 +218,7 @@ func PatchMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
-					Code: http.StatusNotFound,
+					Code:    http.StatusNotFound,
 					Message: "Not found",
 				}
 			} else {
@@ -228,6 +230,75 @@ func PatchMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("{}"))
+	}
+}
+
+func DeleteMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		var httpError *HttpError
+		defer func() {
+			if httpError != nil {
+				data, _ := json.Marshal(httpError)
+				L.Info(httpError.Message, "code", httpError.Code)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(httpError.Code)
+				w.Write(data)
+			}
+		}()
+
+		partyId, httpError := withPartyId(r)
+		if httpError != nil {
+			return
+		}
+
+		_, err := database.GetPartyById(ctx, db, L, partyId)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				httpError = &HttpError{
+					Code:    http.StatusNotFound,
+					Message: "Not found",
+				}
+			} else {
+				httpError = &HttpError{
+					Code:    http.StatusInternalServerError,
+					Message: "Internal server error",
+				}
+			}
+			return
+		}
+
+		memberId, httpError := withMemberId(r)
+		if httpError != nil {
+			return
+		}
+
+		err = database.DeleteMember(ctx, db, L, partyId, memberId)
+		if err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+				httpError = &HttpError{
+					Code:    http.StatusConflict,
+					Message: "Cannot delete member with associated payments",
+				}
+			} else if err == pgx.ErrNoRows {
+				httpError = &HttpError{
+					Code:    http.StatusNotFound,
+					Message: "Not found",
+				}
+			} else {
+				httpError = &HttpError{
+					Code:    http.StatusInternalServerError,
+					Message: "Internal server error",
+				}
+			}
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("{}"))

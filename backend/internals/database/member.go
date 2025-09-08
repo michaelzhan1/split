@@ -68,3 +68,28 @@ func PatchMember(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyId 
 	})
 	return err
 }
+
+func DeleteMember(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyId int, memberId int) error {
+	_, err := WithTx(ctx, db, func(tx pgx.Tx) (struct{}, error) {
+		query := "DELETE FROM member WHERE id = $1 AND party_id = $2"
+		args := []any{memberId, partyId}
+
+		cmdTag, err := tx.Exec(ctx, query, args...)
+		if err != nil {
+			L.Error(fmt.Sprintf("Delete failed: %v", err))
+			return struct{}{}, err
+		}
+		if cmdTag.RowsAffected() > 1 {
+			L.Error("Delete failed: more than one row affected")
+			return struct{}{}, errors.New("more than one row affected")
+		}
+		if cmdTag.RowsAffected() == 0 {
+			L.Error(fmt.Sprintf("Delete failed: member %v does not exist", memberId))
+			return struct{}{}, pgx.ErrNoRows
+		}
+
+		return struct{}{}, nil
+	})
+
+	return err
+}
