@@ -40,14 +40,12 @@ func main() {
 		r.Patch("/{party_id}/members/{member_id}", handlers.PatchMember(db, L))
 		r.Delete("/{party_id}/members/{member_id}", handlers.DeleteMember(db, L))
 
-		r.Post("/{party_id}/calculate", func(w http.ResponseWriter, r *http.Request) {})
-	})
+		r.Get("/{party_id}/payments", handlers.GetPayments(db, L))
+		r.Post("/{party_id}/payments/{payment_id}", func(w http.ResponseWriter, r *http.Request) {})
+		r.Patch("/{party_id}/payments/{payment_id}", func(w http.ResponseWriter, r *http.Request) {})
+		r.Delete("/{party_id}/payments/{payment_id}", func(w http.ResponseWriter, r *http.Request) {})
 
-	r.Route("/payments", func(r chi.Router) {
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) {})
-		r.Post("/{payment_id}", func(w http.ResponseWriter, r *http.Request) {})
-		r.Patch("/{payment_id}", func(w http.ResponseWriter, r *http.Request) {})
-		r.Delete("/{payment_id}", func(w http.ResponseWriter, r *http.Request) {})
+		r.Post("/{party_id}/calculate", func(w http.ResponseWriter, r *http.Request) {})
 	})
 
 	port := "3000"

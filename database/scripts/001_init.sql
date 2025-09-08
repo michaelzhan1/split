@@ -20,7 +20,7 @@ CREATE TABLE payment (
     party_id INTEGER REFERENCES party (id)
         ON DELETE CASCADE,
     description TEXT,
-    amount INTEGER NOT NULL CHECK (amount > 0),
+    amount NUMERIC NOT NULL CHECK (amount > 0),
     payer_id INTEGER REFERENCES member (id)
         ON DELETE RESTRICT
 );

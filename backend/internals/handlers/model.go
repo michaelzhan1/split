@@ -16,3 +16,10 @@ type Party struct {
 type Member struct {
 	Name string `json:"name"`
 }
+
+type Payment struct {
+	Description *string  `json:"description"`
+	Amount      float32  `json:"amount"`
+	Payer       string   `json:"payer"`
+	Payees      []string `json:"payees"`
+}
