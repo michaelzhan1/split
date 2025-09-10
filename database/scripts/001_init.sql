@@ -12,7 +12,8 @@ CREATE TABLE member (
     id SERIAL PRIMARY KEY,
     party_id INTEGER REFERENCES party (id)
         ON DELETE CASCADE,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    balance NUMERIC NOT NULL DEFAULT 0
 );
 
 CREATE TABLE payment (
