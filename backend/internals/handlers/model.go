@@ -10,14 +10,18 @@ func (error *HttpError) Error() string {
 }
 
 type Party struct {
+	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
 type Member struct {
-	Name string `json:"name"`
+	ID      int    `json:"id"`
+	Name    string `json:"name"`
+	Balance string `json:"balance"`
 }
 
 type Payment struct {
+	ID          int      `json:"id"`
 	Description *string  `json:"description"`
 	Amount      float32  `json:"amount"`
 	Payer       string   `json:"payer"`

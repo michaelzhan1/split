@@ -44,13 +44,20 @@ func withMemberId(r *http.Request) (int, *HttpError) {
 	return memberIDInt, nil
 }
 func toPartyView(party database.Party) Party {
-	return Party{Name: party.Name}
+	return Party{
+		ID:   party.ID,
+		Name: party.Name,
+	}
 }
 
 func toMemberList(members []database.Member) []Member {
 	res := make([]Member, 0, len(members))
 	for _, member := range members {
-		res = append(res, Member{Name: member.Name})
+		res = append(res, Member{
+			ID:      member.ID,
+			Name:    member.Name,
+			Balance: member.Balance,
+		})
 	}
 	return res
 }
@@ -59,6 +66,7 @@ func toPaymentList(payments []database.Payment) []Payment {
 	res := make([]Payment, 0, len(payments))
 	for _, payment := range payments {
 		res = append(res, Payment{
+			ID:          payment.ID,
 			Description: payment.Description,
 			Amount:      payment.Amount,
 			Payer:       payment.Payer,

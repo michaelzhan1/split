@@ -11,7 +11,7 @@ import (
 )
 
 func GetMembersByPartyId(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) ([]Member, error) {
-	query := "SELECT name FROM member WHERE member.party_id = $1"
+	query := "SELECT id, name, balance FROM member WHERE member.party_id = $1"
 	args := []any{id}
 
 	rows, err := db.Query(ctx, query, args...)
