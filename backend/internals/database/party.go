@@ -10,11 +10,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetPartyById(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) (Party, error) {
-	query := "SELECT id, name FROM party WHERE party.id = $1"
-	args := []any{id}
+func GetPartyByID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) (Party, error) {
+	query := "SELECT id, name FROM party WHERE party.id = @id"
+	args := pgx.StrictNamedArgs{
+		"id": id,
+	}
 
-	rows, err := db.Query(ctx, query, args...)
+	rows, err := db.Query(ctx, query, args)
 	if err != nil {
 		L.Error(fmt.Sprintf("Get failed: %v", err))
 		return Party{}, err
@@ -31,11 +33,13 @@ func GetPartyById(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int)
 
 func CreateParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, name string) (int, error) {
 	return WithTx(ctx, db, func(tx pgx.Tx) (int, error) {
-		query := "INSERT INTO party (name) VALUES ($1) RETURNING id"
-		args := []any{name}
+		query := "INSERT INTO party (name) VALUES (@name) RETURNING id"
+		args := pgx.StrictNamedArgs{
+			"name": name,
+		}
 
 		var id int
-		err := tx.QueryRow(ctx, query, args...).Scan(&id)
+		err := tx.QueryRow(ctx, query, args).Scan(&id)
 		if err != nil {
 			L.Error(fmt.Sprintf("Insert failed: %v", err))
 			return 0, err
@@ -47,10 +51,13 @@ func CreateParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, name str
 
 func PatchParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int, name string) error {
 	_, err := WithTx(ctx, db, func(tx pgx.Tx) (struct{}, error) {
-		query := "UPDATE party SET name = $1 WHERE id = $2"
-		args := []any{name, id}
+		query := "UPDATE party SET name = @name WHERE id = @id"
+		args := pgx.StrictNamedArgs{
+			"name": name,
+			"id":   id,
+		}
 
-		cmdTag, err := tx.Exec(ctx, query, args...)
+		cmdTag, err := tx.Exec(ctx, query, args)
 		if err != nil {
 			L.Error(fmt.Sprintf("Patch failed: %v", err))
 			return struct{}{}, err
@@ -71,10 +78,12 @@ func PatchParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int, n
 
 func DeleteParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) error {
 	_, err := WithTx(ctx, db, func(tx pgx.Tx) (struct{}, error) {
-		query := "DELETE FROM party WHERE id = $1"
-		args := []any{id}
+		query := "DELETE FROM party WHERE id = @id"
+		args := pgx.StrictNamedArgs{
+			"id": id,
+		}
 
-		cmdTag, err := tx.Exec(ctx, query, args...)
+		cmdTag, err := tx.Exec(ctx, query, args)
 		if err != nil {
 			L.Error(fmt.Sprintf("Delete failed: %v", err))
 			return struct{}{}, err

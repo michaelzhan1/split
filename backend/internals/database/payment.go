@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetPaymentsByPartyId(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) ([]Payment, error) {
+func GetPaymentsByPartyID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) ([]Payment, error) {
 	query := `
 	SELECT
 		p.id,
@@ -28,11 +28,13 @@ func GetPaymentsByPartyId(ctx context.Context, db *pgxpool.Pool, L *slog.Logger,
 		ON mp.payment_id = p.id
 	LEFT JOIN member AS mm
 		ON mp.member_id = mm.id
-	WHERE p.party_id = $1
+	WHERE p.party_id = @id
 	GROUP BY p.id, p.description, p.amount, m.name, m.id, m.balance`
-	args := []any{id}
+	args := pgx.StrictNamedArgs{
+		"id": id,
+	}
 
-	rows, err := db.Query(ctx, query, args...)
+	rows, err := db.Query(ctx, query, args)
 	if err != nil {
 		L.Error(fmt.Sprintf("Get failed: %v", err))
 		return []Payment{}, err

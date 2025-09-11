@@ -28,12 +28,12 @@ func GetPayments(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId, httpError := withPartyId(r)
+		partyID, httpError := withpartyID(r)
 		if httpError != nil {
 			return
 		}
 
-		_, err := database.GetPartyById(ctx, db, L, partyId)
+		_, err := database.GetPartyByID(ctx, db, L, partyID)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -49,7 +49,7 @@ func GetPayments(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		payments, err := database.GetPaymentsByPartyId(ctx, db, L, partyId)
+		payments, err := database.GetPaymentsByPartyID(ctx, db, L, partyID)
 		if err != nil {
 			httpError = &HttpError{
 				Code:    http.StatusInternalServerError,

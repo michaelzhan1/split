@@ -10,11 +10,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetMembersByPartyId(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) ([]Member, error) {
-	query := "SELECT id, name, balance FROM member WHERE member.party_id = $1"
-	args := []any{id}
+func GetMembersByPartyID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) ([]Member, error) {
+	query := "SELECT id, name, balance FROM member WHERE member.party_id = @id"
+	args := pgx.StrictNamedArgs{
+		"id": id,
+	}
 
-	rows, err := db.Query(ctx, query, args...)
+	rows, err := db.Query(ctx, query, args)
 	if err != nil {
 		L.Error(fmt.Sprintf("Get failed: %v", err))
 		return []Member{}, err
@@ -29,13 +31,16 @@ func GetMembersByPartyId(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, 
 	return members, nil
 }
 
-func AddMemberToPartyById(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyId int, name string) (int, error) {
+func AddMemberToPartyByID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyID int, name string) (int, error) {
 	return WithTx(ctx, db, func(tx pgx.Tx) (int, error) {
-		query := "INSERT INTO member (party_id, name) values ($1, $2) RETURNING id"
-		args := []any{partyId, name}
+		query := "INSERT INTO member (party_id, name) values (@id, @name) RETURNING id"
+		args := pgx.StrictNamedArgs{
+			"id":   partyID,
+			"name": name,
+		}
 
 		var id int
-		err := tx.QueryRow(ctx, query, args...).Scan(&id)
+		err := tx.QueryRow(ctx, query, args).Scan(&id)
 		if err != nil {
 			L.Error(fmt.Sprintf("Insert failed: %v", err))
 			return 0, err
@@ -45,12 +50,16 @@ func AddMemberToPartyById(ctx context.Context, db *pgxpool.Pool, L *slog.Logger,
 	})
 }
 
-func PatchMember(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyId int, memberId int, name string) error {
+func PatchMember(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyID int, memberID int, name string) error {
 	_, err := WithTx(ctx, db, func(tx pgx.Tx) (struct{}, error) {
-		query := "UPDATE member SET name = $1 WHERE id = $2 AND party_id = $3"
-		args := []any{name, memberId, partyId}
+		query := "UPDATE member SET name = @name WHERE id = @id AND party_id = @partyID"
+		args := pgx.StrictNamedArgs{
+			"name":    name,
+			"id":      memberID,
+			"partyID": partyID,
+		}
 
-		cmdTag, err := tx.Exec(ctx, query, args...)
+		cmdTag, err := tx.Exec(ctx, query, args)
 		if err != nil {
 			L.Error(fmt.Sprintf("Patch failed: %v", err))
 			return struct{}{}, err
@@ -60,7 +69,7 @@ func PatchMember(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyId 
 			return struct{}{}, errors.New("more than one row affected")
 		}
 		if cmdTag.RowsAffected() == 0 {
-			L.Error(fmt.Sprintf("Patch failed: member %v does not exist", memberId))
+			L.Error(fmt.Sprintf("Patch failed: member %v does not exist", memberID))
 			return struct{}{}, pgx.ErrNoRows
 		}
 
@@ -69,12 +78,15 @@ func PatchMember(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyId 
 	return err
 }
 
-func DeleteMember(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyId int, memberId int) error {
+func DeleteMember(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyID int, memberID int) error {
 	_, err := WithTx(ctx, db, func(tx pgx.Tx) (struct{}, error) {
-		query := "DELETE FROM member WHERE id = $1 AND party_id = $2"
-		args := []any{memberId, partyId}
+		query := "DELETE FROM member WHERE id = @id AND party_id = @partyID"
+		args := pgx.StrictNamedArgs{
+			"id":      memberID,
+			"partyID": partyID,
+		}
 
-		cmdTag, err := tx.Exec(ctx, query, args...)
+		cmdTag, err := tx.Exec(ctx, query, args)
 		if err != nil {
 			L.Error(fmt.Sprintf("Delete failed: %v", err))
 			return struct{}{}, err
@@ -84,7 +96,7 @@ func DeleteMember(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyId
 			return struct{}{}, errors.New("more than one row affected")
 		}
 		if cmdTag.RowsAffected() == 0 {
-			L.Error(fmt.Sprintf("Delete failed: member %v does not exist", memberId))
+			L.Error(fmt.Sprintf("Delete failed: member %v does not exist", memberID))
 			return struct{}{}, pgx.ErrNoRows
 		}
 

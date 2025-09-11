@@ -8,7 +8,7 @@ import (
 	"github.com/michaelzhan1/split/internals/database"
 )
 
-func withPartyId(r *http.Request) (int, *HttpError) {
+func withpartyID(r *http.Request) (int, *HttpError) {
 	partyIDStr := chi.URLParam(r, "party_id")
 	if partyIDStr == "" {
 		return 0, &HttpError{
@@ -26,7 +26,7 @@ func withPartyId(r *http.Request) (int, *HttpError) {
 	return partyIDInt, nil
 }
 
-func withMemberId(r *http.Request) (int, *HttpError) {
+func withmemberID(r *http.Request) (int, *HttpError) {
 	memberIDStr := chi.URLParam(r, "member_id")
 	if memberIDStr == "" {
 		return 0, &HttpError{

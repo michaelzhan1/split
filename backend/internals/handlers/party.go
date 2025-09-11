@@ -28,12 +28,12 @@ func GetParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId, httpError := withPartyId(r)
+		partyID, httpError := withpartyID(r)
 		if httpError != nil {
 			return
 		}
 
-		party, err := database.GetPartyById(ctx, db, L, partyId)
+		party, err := database.GetPartyByID(ctx, db, L, partyID)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -63,7 +63,7 @@ func CreateParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	}
 
 	type response struct {
-		Id int `json:"id"`
+		ID int `json:"id"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -135,7 +135,7 @@ func PatchParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId, httpError := withPartyId(r)
+		partyID, httpError := withpartyID(r)
 		if httpError != nil {
 			return
 		}
@@ -161,7 +161,7 @@ func PatchParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		err = database.PatchParty(ctx, db, L, partyId, *body.Name)
+		err = database.PatchParty(ctx, db, L, partyID, *body.Name)
 		if err != nil {
 			httpError = &HttpError{
 				Code:    http.StatusInternalServerError,
@@ -192,12 +192,12 @@ func DeleteParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId, httpError := withPartyId(r)
+		partyID, httpError := withpartyID(r)
 		if httpError != nil {
 			return
 		}
 
-		err := database.DeleteParty(ctx, db, L, partyId)
+		err := database.DeleteParty(ctx, db, L, partyID)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{

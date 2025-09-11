@@ -30,12 +30,12 @@ func GetMembers(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId, httpError := withPartyId(r)
+		partyID, httpError := withpartyID(r)
 		if httpError != nil {
 			return
 		}
 
-		_, err := database.GetPartyById(ctx, db, L, partyId)
+		_, err := database.GetPartyByID(ctx, db, L, partyID)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -51,7 +51,7 @@ func GetMembers(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		members, err := database.GetMembersByPartyId(ctx, db, L, partyId)
+		members, err := database.GetMembersByPartyID(ctx, db, L, partyID)
 		if err != nil {
 			httpError = &HttpError{
 				Code:    http.StatusInternalServerError,
@@ -74,7 +74,7 @@ func AddMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	}
 
 	type response struct {
-		Id int `json:"id"`
+		ID int `json:"id"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -92,12 +92,12 @@ func AddMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId, httpError := withPartyId(r)
+		partyID, httpError := withpartyID(r)
 		if httpError != nil {
 			return
 		}
 
-		_, err := database.GetPartyById(ctx, db, L, partyId)
+		_, err := database.GetPartyByID(ctx, db, L, partyID)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -130,7 +130,7 @@ func AddMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		id, err := database.AddMemberToPartyById(ctx, db, L, partyId, body.Name)
+		id, err := database.AddMemberToPartyByID(ctx, db, L, partyID, body.Name)
 		if err != nil {
 			httpError = &HttpError{
 				Code:    http.StatusInternalServerError,
@@ -167,12 +167,12 @@ func PatchMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId, httpError := withPartyId(r)
+		partyID, httpError := withpartyID(r)
 		if httpError != nil {
 			return
 		}
 
-		_, err := database.GetPartyById(ctx, db, L, partyId)
+		_, err := database.GetPartyByID(ctx, db, L, partyID)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -188,7 +188,7 @@ func PatchMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		memberId, httpError := withMemberId(r)
+		memberID, httpError := withmemberID(r)
 		if httpError != nil {
 			return
 		}
@@ -214,7 +214,7 @@ func PatchMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		err = database.PatchMember(ctx, db, L, partyId, memberId, *body.Name)
+		err = database.PatchMember(ctx, db, L, partyID, memberID, *body.Name)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -252,12 +252,12 @@ func DeleteMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId, httpError := withPartyId(r)
+		partyID, httpError := withpartyID(r)
 		if httpError != nil {
 			return
 		}
 
-		_, err := database.GetPartyById(ctx, db, L, partyId)
+		_, err := database.GetPartyByID(ctx, db, L, partyID)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -273,12 +273,12 @@ func DeleteMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		memberId, httpError := withMemberId(r)
+		memberID, httpError := withmemberID(r)
 		if httpError != nil {
 			return
 		}
 
-		err = database.DeleteMember(ctx, db, L, partyId, memberId)
+		err = database.DeleteMember(ctx, db, L, partyID, memberID)
 		if err != nil {
 			var pgErr *pgconn.PgError
 			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
