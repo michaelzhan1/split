@@ -41,9 +41,10 @@ func main() {
 		r.Delete("/{party_id}/members/{member_id}", handlers.DeleteMember(db, L))
 
 		r.Get("/{party_id}/payments", handlers.GetPayments(db, L))
-		r.Post("/{party_id}/payments/{payment_id}", func(w http.ResponseWriter, r *http.Request) {})
+		r.Post("/{party_id}/payments", func(w http.ResponseWriter, r *http.Request) {})
 		r.Patch("/{party_id}/payments/{payment_id}", func(w http.ResponseWriter, r *http.Request) {})
 		r.Delete("/{party_id}/payments/{payment_id}", func(w http.ResponseWriter, r *http.Request) {})
+		r.Delete("/{party_id}/payments", func(w http.ResponseWriter, r *http.Request) {}) // delete all
 
 		r.Post("/{party_id}/calculate", func(w http.ResponseWriter, r *http.Request) {})
 	})

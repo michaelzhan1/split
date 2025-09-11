@@ -65,12 +65,25 @@ func toMemberList(members []database.Member) []Member {
 func toPaymentList(payments []database.Payment) []Payment {
 	res := make([]Payment, 0, len(payments))
 	for _, payment := range payments {
+		payees := []Member{}
+		for idx := range payment.PayeeIDs {
+			payees = append(payees, Member{
+				ID:      payment.PayeeIDs[idx],
+				Name:    payment.PayeeNames[idx],
+				Balance: payment.PayeeBalances[idx],
+			})
+		}
+
 		res = append(res, Payment{
 			ID:          payment.ID,
 			Description: payment.Description,
 			Amount:      payment.Amount,
-			Payer:       payment.Payer,
-			Payees:      payment.Payees,
+			Payer: Member{
+				ID:      payment.PayerID,
+				Name:    payment.PayerName,
+				Balance: payment.PayerBalance,
+			},
+			Payees: payees,
 		})
 	}
 	return res

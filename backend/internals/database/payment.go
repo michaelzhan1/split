@@ -13,10 +13,14 @@ func GetPaymentsByPartyId(ctx context.Context, db *pgxpool.Pool, L *slog.Logger,
 	query := `
 	SELECT
 		p.id,
-		p.description AS description,
-		p.amount AS amount,
-		m.name AS payer_name,
-		ARRAY_AGG(mm.name) AS payees
+		p.description         AS description,
+		p.amount              AS amount,
+		m.id                  AS payer_id,
+		m.name                AS payer_name,
+		m.balance             AS payer_balance,
+		ARRAY_AGG(mm.id)      AS payee_ids,
+		ARRAY_AGG(mm.name)    AS payee_names,
+		ARRAY_AGG(mm.balance) AS payee_balances
 	FROM payment AS p
 	LEFT JOIN member AS m
 		ON p.payer_id = m.id
@@ -25,7 +29,7 @@ func GetPaymentsByPartyId(ctx context.Context, db *pgxpool.Pool, L *slog.Logger,
 	LEFT JOIN member AS mm
 		ON mp.member_id = mm.id
 	WHERE p.party_id = $1
-	GROUP BY p.id, p.description, p.amount, m.name`
+	GROUP BY p.id, p.description, p.amount, m.name, m.id, m.balance`
 	args := []any{id}
 
 	rows, err := db.Query(ctx, query, args...)

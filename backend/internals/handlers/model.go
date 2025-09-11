@@ -15,15 +15,15 @@ type Party struct {
 }
 
 type Member struct {
-	ID      int    `json:"id"`
-	Name    string `json:"name"`
-	Balance string `json:"balance"`
+	ID      int     `json:"id"`
+	Name    string  `json:"name"`
+	Balance float32 `json:"balance"`
 }
 
 type Payment struct {
 	ID          int      `json:"id"`
 	Description *string  `json:"description"`
 	Amount      float32  `json:"amount"`
-	Payer       string   `json:"payer"`
-	Payees      []string `json:"payees"`
+	Payer       Member   `json:"payer"`
+	Payees      []Member `json:"payees"`
 }
