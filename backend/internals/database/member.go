@@ -33,7 +33,7 @@ func GetMembersByPartyID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, 
 
 func AddMemberToPartyByID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyID int, name string) (int, error) {
 	return WithTx(ctx, db, func(tx pgx.Tx) (int, error) {
-		query := "INSERT INTO member (party_id, name) values (@id, @name) RETURNING id"
+		query := "INSERT INTO member (party_id, name) VALUES (@id, @name) RETURNING id"
 		args := pgx.StrictNamedArgs{
 			"id":   partyID,
 			"name": name,

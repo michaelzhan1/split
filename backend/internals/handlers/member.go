@@ -30,7 +30,7 @@ func GetMembers(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyID, httpError := withpartyID(r)
+		partyID, httpError := withPartyID(r)
 		if httpError != nil {
 			return
 		}
@@ -92,7 +92,7 @@ func AddMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyID, httpError := withpartyID(r)
+		partyID, httpError := withPartyID(r)
 		if httpError != nil {
 			return
 		}
@@ -167,7 +167,7 @@ func PatchMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyID, httpError := withpartyID(r)
+		partyID, httpError := withPartyID(r)
 		if httpError != nil {
 			return
 		}
@@ -252,7 +252,7 @@ func DeleteMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyID, httpError := withpartyID(r)
+		partyID, httpError := withPartyID(r)
 		if httpError != nil {
 			return
 		}

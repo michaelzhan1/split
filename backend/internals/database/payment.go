@@ -2,8 +2,11 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -47,4 +50,91 @@ func GetPaymentsByPartyID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger,
 	}
 
 	return payments, nil
+}
+
+type InsertPayment struct {
+	Description *string `json:"description"`
+	Amount      float32 `json:"amount"`
+	PayerID     int     `json:"payer_id"`
+	PayeeIDs    []int   `json:"payee_ids"`
+}
+
+func AddPaymentByPartyId(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int, body InsertPayment) (int, error) {
+	return WithTx(ctx, db, func(tx pgx.Tx) (int, error) {
+		// insert payment
+		paymentQuery := `INSERT INTO payment (party_id, description, amount, payer_id)
+VALUES (@id, @description, @amount, @payer_id)
+RETURNING id`
+		paymentArgs := pgx.StrictNamedArgs{
+			"id":          id,
+			"description": body.Description,
+			"amount":      body.Amount,
+			"payer_id":    body.PayerID,
+		}
+
+		var paymentID int
+		L.Info("Insert payment", "query", paymentQuery, "args", paymentArgs)
+		err := tx.QueryRow(ctx, paymentQuery, paymentArgs).Scan(&paymentID)
+		if err != nil {
+			L.Error(fmt.Sprintf("Insert failed: %v", err))
+			return 0, err
+		}
+		L.Info("Created new payment", "id", paymentID)
+
+		// insert junction
+		mpArgs := []any{}
+		mpValues := []string{}
+		for _, payeeID := range body.PayeeIDs {
+			mpArgs = append(mpArgs, payeeID)
+			mpArgs = append(mpArgs, paymentID)
+			mpValues = append(mpValues, "($"+strconv.Itoa(len(mpArgs)-1)+", $"+strconv.Itoa(len(mpArgs))+")")
+		}
+		mpQuery := "INSERT INTO member_payment (member_id, payment_id) VALUES " + strings.Join(mpValues, ", ")
+		L.Info("Insert member_payment", "query", mpQuery, "args", mpArgs)
+		cmdTag, err := tx.Exec(ctx, mpQuery, mpArgs...)
+		if err != nil {
+			L.Error(fmt.Sprintf("Insert failed: %v", err))
+			return 0, err
+		}
+		if cmdTag.RowsAffected() != int64(len(body.PayeeIDs)) {
+			L.Error("Unexpected number of rows affected in member_payment table")
+			return 0, errors.New("unexpected number of rows affected")
+		}
+
+		// update balance
+		payeeBalance := body.Amount / float32(len(body.PayeeIDs))
+		payeeBalQuery := "UPDATE member SET balance = balance + @payeeBalance WHERE id = ANY(@payeeIDs)"
+		payeeBalArgs := pgx.StrictNamedArgs{
+			"payeeBalance": payeeBalance,
+			"payeeIDs":     body.PayeeIDs,
+		}
+		L.Info("Update payee members", "query", payeeBalQuery, "args", payeeBalArgs)
+		cmdTag, err = tx.Exec(ctx, payeeBalQuery, payeeBalArgs)
+		if err != nil {
+			L.Error(fmt.Sprintf("Update failed: %v", err))
+			return 0, err
+		}
+		if cmdTag.RowsAffected() != int64(len(body.PayeeIDs)) {
+			L.Error("Unexpected number of rows affected in member table")
+			return 0, errors.New("unexpected number of rows affected")
+		}
+
+		payerQuery := "UPDATE member SET balance = balance - @amount WHERE id = @id"
+		payerArgs := pgx.StrictNamedArgs{
+			"amount": body.Amount,
+			"id":     body.PayerID,
+		}
+		L.Info("Update payer member", "query", payerQuery, "args", payerArgs)
+		cmdTag, err = tx.Exec(ctx, payerQuery, payerArgs)
+		if err != nil {
+			L.Error(fmt.Sprintf("Update failed: %v", err))
+			return 0, err
+		}
+		if cmdTag.RowsAffected() != 1 {
+			L.Error("Unexpected number of rows affected in member table")
+			return 0, errors.New("unexpected number of rows affected")
+		}
+
+		return paymentID, nil
+	})
 }
