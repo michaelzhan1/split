@@ -16,6 +16,7 @@ func GetPartyByID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int)
 		"id": id,
 	}
 
+	L.Info("GetPartyByID", "query", query, "args", args)
 	rows, err := db.Query(ctx, query, args)
 	if err != nil {
 		L.Error(fmt.Sprintf("Get failed: %v", err))
@@ -39,6 +40,7 @@ func CreateParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, name str
 		}
 
 		var id int
+		L.Info("CreateParty", "query", query, "args", args)
 		err := tx.QueryRow(ctx, query, args).Scan(&id)
 		if err != nil {
 			L.Error(fmt.Sprintf("Insert failed: %v", err))
@@ -57,6 +59,7 @@ func PatchParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int, n
 			"id":   id,
 		}
 
+		L.Info("PatchParty", "query", query, "args", args)
 		cmdTag, err := tx.Exec(ctx, query, args)
 		if err != nil {
 			L.Error(fmt.Sprintf("Patch failed: %v", err))
@@ -83,6 +86,7 @@ func DeleteParty(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) 
 			"id": id,
 		}
 
+		L.Info("DeleteParty", "query", query, "args", args)
 		cmdTag, err := tx.Exec(ctx, query, args)
 		if err != nil {
 			L.Error(fmt.Sprintf("Delete failed: %v", err))

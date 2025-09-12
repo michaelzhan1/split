@@ -37,6 +37,7 @@ func GetPaymentsByPartyID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger,
 		"id": id,
 	}
 
+	L.Info("GetPaymentsByPartyID", "query", query, "args", args)
 	rows, err := db.Query(ctx, query, args)
 	if err != nil {
 		L.Error(fmt.Sprintf("Get failed: %v", err))
@@ -73,13 +74,12 @@ RETURNING id`
 		}
 
 		var paymentID int
-		L.Info("Insert payment", "query", paymentQuery, "args", paymentArgs)
+		L.Info("AddPaymentByPartyId.payment", "query", paymentQuery, "args", paymentArgs)
 		err := tx.QueryRow(ctx, paymentQuery, paymentArgs).Scan(&paymentID)
 		if err != nil {
 			L.Error(fmt.Sprintf("Insert failed: %v", err))
 			return 0, err
 		}
-		L.Info("Created new payment", "id", paymentID)
 
 		// insert junction
 		mpArgs := []any{}
@@ -90,7 +90,7 @@ RETURNING id`
 			mpValues = append(mpValues, "($"+strconv.Itoa(len(mpArgs)-1)+", $"+strconv.Itoa(len(mpArgs))+")")
 		}
 		mpQuery := "INSERT INTO member_payment (member_id, payment_id) VALUES " + strings.Join(mpValues, ", ")
-		L.Info("Insert member_payment", "query", mpQuery, "args", mpArgs)
+		L.Info("AddPaymentByPartyId.member_payment", "query", mpQuery, "args", mpArgs)
 		cmdTag, err := tx.Exec(ctx, mpQuery, mpArgs...)
 		if err != nil {
 			L.Error(fmt.Sprintf("Insert failed: %v", err))
@@ -103,13 +103,13 @@ RETURNING id`
 
 		// update balance
 		payeeBalance := body.Amount / float32(len(body.PayeeIDs))
-		payeeBalQuery := "UPDATE member SET balance = balance + @payeeBalance WHERE id = ANY(@payeeIDs)"
-		payeeBalArgs := pgx.StrictNamedArgs{
+		payeeQuery := "UPDATE member SET balance = balance + @payeeBalance WHERE id = ANY(@payeeIDs)"
+		payeeArgs := pgx.StrictNamedArgs{
 			"payeeBalance": payeeBalance,
 			"payeeIDs":     body.PayeeIDs,
 		}
-		L.Info("Update payee members", "query", payeeBalQuery, "args", payeeBalArgs)
-		cmdTag, err = tx.Exec(ctx, payeeBalQuery, payeeBalArgs)
+		L.Info("AddPaymentByPartyId.payees", "query", payeeQuery, "args", payeeArgs)
+		cmdTag, err = tx.Exec(ctx, payeeQuery, payeeArgs)
 		if err != nil {
 			L.Error(fmt.Sprintf("Update failed: %v", err))
 			return 0, err
@@ -124,7 +124,7 @@ RETURNING id`
 			"amount": body.Amount,
 			"id":     body.PayerID,
 		}
-		L.Info("Update payer member", "query", payerQuery, "args", payerArgs)
+		L.Info("AddPaymentByPartyId.payer", "query", payerQuery, "args", payerArgs)
 		cmdTag, err = tx.Exec(ctx, payerQuery, payerArgs)
 		if err != nil {
 			L.Error(fmt.Sprintf("Update failed: %v", err))
