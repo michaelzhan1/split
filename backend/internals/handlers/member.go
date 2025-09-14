@@ -188,7 +188,7 @@ func PatchMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		memberID, httpError := withmemberID(r)
+		memberID, httpError := withMemberID(r)
 		if httpError != nil {
 			return
 		}
@@ -273,7 +273,7 @@ func DeleteMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		memberID, httpError := withmemberID(r)
+		memberID, httpError := withMemberID(r)
 		if httpError != nil {
 			return
 		}

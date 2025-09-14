@@ -26,7 +26,7 @@ func withPartyID(r *http.Request) (int, *HttpError) {
 	return partyIDInt, nil
 }
 
-func withmemberID(r *http.Request) (int, *HttpError) {
+func withMemberID(r *http.Request) (int, *HttpError) {
 	memberIDStr := chi.URLParam(r, "member_id")
 	if memberIDStr == "" {
 		return 0, &HttpError{
@@ -43,6 +43,25 @@ func withmemberID(r *http.Request) (int, *HttpError) {
 	}
 	return memberIDInt, nil
 }
+
+func withPaymentID(r *http.Request) (int, *HttpError) {
+	paymentIDStr := chi.URLParam(r, "payment_id")
+	if paymentIDStr == "" {
+		return 0, &HttpError{
+			Code:    http.StatusBadRequest,
+			Message: "Empty or missing payment ID",
+		}
+	}
+	paymentIDInt, err := strconv.Atoi(paymentIDStr)
+	if err != nil || paymentIDInt <= 0 {
+		return 0, &HttpError{
+			Code:    http.StatusBadRequest,
+			Message: "Bad payment ID",
+		}
+	}
+	return paymentIDInt, nil
+}
+
 func toPartyView(party database.Party) Party {
 	return Party{
 		ID:   party.ID,
