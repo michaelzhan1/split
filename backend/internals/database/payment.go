@@ -25,12 +25,12 @@ func GetPaymentsByPartyID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger,
 		ARRAY_AGG(mm.name)    AS payee_names,
 		ARRAY_AGG(mm.balance) AS payee_balances
 	FROM payment AS p
-	LEFT JOIN member AS m
+	LEFT JOIN user AS m
 		ON p.payer_id = m.id
-	LEFT JOIN member_payment AS mp
+	LEFT JOIN user_payment AS mp
 		ON mp.payment_id = p.id
-	LEFT JOIN member AS mm
-		ON mp.member_id = mm.id
+	LEFT JOIN user AS mm
+		ON mp.user_id = mm.id
 	WHERE p.party_id = @id
 	GROUP BY p.id, p.description, p.amount, m.name, m.id, m.balance`
 	args := pgx.StrictNamedArgs{
@@ -66,12 +66,12 @@ func GetPaymentByID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id in
 		ARRAY_AGG(mm.name)    AS payee_names,
 		ARRAY_AGG(mm.balance) AS payee_balances
 	FROM payment AS p
-	LEFT JOIN member AS m
+	LEFT JOIN user AS m
 		ON p.payer_id = m.id
-	LEFT JOIN member_payment AS mp
+	LEFT JOIN user_payment AS mp
 		ON mp.payment_id = p.id
-	LEFT JOIN member AS mm
-		ON mp.member_id = mm.id
+	LEFT JOIN user AS mm
+		ON mp.user_id = mm.id
 	WHERE p.id = @id
 	GROUP BY p.id, p.description, p.amount, m.name, m.id, m.balance`
 	args := pgx.StrictNamedArgs{
@@ -130,21 +130,21 @@ RETURNING id`
 			mpArgs = append(mpArgs, paymentID)
 			mpValues = append(mpValues, "($"+strconv.Itoa(len(mpArgs)-1)+", $"+strconv.Itoa(len(mpArgs))+")")
 		}
-		mpQuery := "INSERT INTO member_payment (member_id, payment_id) VALUES " + strings.Join(mpValues, ", ")
-		L.Info("AddPaymentByPartyId.member_payment", "query", mpQuery, "args", mpArgs)
+		mpQuery := "INSERT INTO user_payment (user_id, payment_id) VALUES " + strings.Join(mpValues, ", ")
+		L.Info("AddPaymentByPartyId.user_payment", "query", mpQuery, "args", mpArgs)
 		cmdTag, err := tx.Exec(ctx, mpQuery, mpArgs...)
 		if err != nil {
 			L.Error(fmt.Sprintf("Insert failed: %v", err))
 			return 0, err
 		}
 		if cmdTag.RowsAffected() != int64(len(body.PayeeIDs)) {
-			L.Error("Unexpected number of rows affected in member_payment table")
+			L.Error("Unexpected number of rows affected in user_payment table")
 			return 0, errors.New("unexpected number of rows affected")
 		}
 
 		// update balance
 		payeeBalance := body.Amount / float32(len(body.PayeeIDs))
-		payeeQuery := "UPDATE member SET balance = balance + @payeeBalance WHERE id = ANY(@payeeIDs)"
+		payeeQuery := "UPDATE user SET balance = balance + @payeeBalance WHERE id = ANY(@payeeIDs)"
 		payeeArgs := pgx.StrictNamedArgs{
 			"payeeBalance": payeeBalance,
 			"payeeIDs":     body.PayeeIDs,
@@ -156,11 +156,11 @@ RETURNING id`
 			return 0, err
 		}
 		if cmdTag.RowsAffected() != int64(len(body.PayeeIDs)) {
-			L.Error("Unexpected number of rows affected in member table")
+			L.Error("Unexpected number of rows affected in user table")
 			return 0, errors.New("unexpected number of rows affected")
 		}
 
-		payerQuery := "UPDATE member SET balance = balance - @amount WHERE id = @id"
+		payerQuery := "UPDATE user SET balance = balance - @amount WHERE id = @id"
 		payerArgs := pgx.StrictNamedArgs{
 			"amount": body.Amount,
 			"id":     body.PayerID,
@@ -172,7 +172,7 @@ RETURNING id`
 			return 0, err
 		}
 		if cmdTag.RowsAffected() != 1 {
-			L.Error("Unexpected number of rows affected in member table")
+			L.Error("Unexpected number of rows affected in user table")
 			return 0, errors.New("unexpected number of rows affected")
 		}
 
@@ -184,7 +184,7 @@ func DeletePayment(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, paymen
 	_, err := WithTx(ctx, db, func(tx pgx.Tx) (struct{}, error) {
 		// update payees
 		payeeBalance := payment.Amount / float32(len(payment.PayeeIDs))
-		payeeQuery := "UPDATE member SET balance = balance - @payeeBalance WHERE id = ANY(@payeeIDs)"
+		payeeQuery := "UPDATE user SET balance = balance - @payeeBalance WHERE id = ANY(@payeeIDs)"
 		payeeArgs := pgx.StrictNamedArgs{
 			"payeeBalance": payeeBalance,
 			"payeeIDs":     payment.PayeeIDs,
@@ -196,12 +196,12 @@ func DeletePayment(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, paymen
 			return struct{}{}, err
 		}
 		if cmdTag.RowsAffected() != int64(len(payment.PayeeIDs)) {
-			L.Error("Unexpected number of rows affected in member table")
+			L.Error("Unexpected number of rows affected in user table")
 			return struct{}{}, errors.New("unexpected number of rows affected")
 		}
 
 		// update payer
-		payerQuery := "UPDATE member SET balance = balance - @amount WHERE id = @id"
+		payerQuery := "UPDATE user SET balance = balance - @amount WHERE id = @id"
 		payerArgs := pgx.StrictNamedArgs{
 			"amount": payment.Amount,
 			"id":     payment.PayerID,
@@ -213,7 +213,7 @@ func DeletePayment(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, paymen
 			return struct{}{}, err
 		}
 		if cmdTag.RowsAffected() != 1 {
-			L.Error("Unexpected number of rows affected in member table")
+			L.Error("Unexpected number of rows affected in user table")
 			return struct{}{}, errors.New("unexpected number of rows affected")
 		}
 
@@ -229,7 +229,7 @@ func DeletePayment(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, paymen
 			return struct{}{}, err
 		}
 		if cmdTag.RowsAffected() != 1 {
-			L.Error("Unexpected number of rows affected in member table")
+			L.Error("Unexpected number of rows affected in user table")
 			return struct{}{}, errors.New("unexpected number of rows affected")
 		}
 
