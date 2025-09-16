@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -209,9 +208,66 @@ func DeletePayment(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		fmt.Printf("%+v\n", payment)
-
 		err = database.DeletePayment(ctx, db, L, payment)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				httpError = &HttpError{
+					Code:    http.StatusNotFound,
+					Message: "Not found",
+				}
+			} else {
+				httpError = &HttpError{
+					Code:    http.StatusInternalServerError,
+					Message: "Internal server error",
+				}
+			}
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("{}"))
+	}
+}
+
+func DeleteAllPayments(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		var httpError *HttpError
+		defer func() {
+			if httpError != nil {
+				data, _ := json.Marshal(httpError)
+				L.Info(httpError.Message, "code", httpError.Code)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(httpError.Code)
+				w.Write(data)
+			}
+		}()
+
+		partyId, httpError := withPartyID(r)
+		if httpError != nil {
+			return
+		}
+
+		_, err := database.GetPartyByID(ctx, db, L, partyId)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				httpError = &HttpError{
+					Code:    http.StatusNotFound,
+					Message: "Not found",
+				}
+			} else {
+				httpError = &HttpError{
+					Code:    http.StatusInternalServerError,
+					Message: "Internal server error",
+				}
+			}
+			return
+		}
+		
+		err = database.DeleteAllPayments(ctx, db, L, partyId)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{

@@ -10,38 +10,38 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetUsersByPartyID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) ([]User, error) {
-	query := "SELECT id, name, balance FROM user WHERE user.party_id = @id"
+func GetMembersByPartyID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) ([]Member, error) {
+	query := "SELECT id, name, balance FROM member WHERE member.party_id = @id"
 	args := pgx.StrictNamedArgs{
 		"id": id,
 	}
 
-	L.Info("GetUsersByPartyID", "query", query, "args", args)
+	L.Info("GetMembersByPartyID", "query", query, "args", args)
 	rows, err := db.Query(ctx, query, args)
 	if err != nil {
 		L.Error(fmt.Sprintf("Get failed: %v", err))
-		return []User{}, err
+		return []Member{}, err
 	}
 
-	users, err := pgx.CollectRows(rows, pgx.RowToStructByName[User])
+	members, err := pgx.CollectRows(rows, pgx.RowToStructByName[Member])
 	if err != nil {
 		L.Error(fmt.Sprintf("Binding failed: %v", err))
-		return []User{}, err
+		return []Member{}, err
 	}
 
-	return users, nil
+	return members, nil
 }
 
-func AddUserToPartyByID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyID int, name string) (int, error) {
+func AddMemberToPartyByID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyID int, name string) (int, error) {
 	return WithTx(ctx, db, func(tx pgx.Tx) (int, error) {
-		query := "INSERT INTO user (party_id, name) VALUES (@id, @name) RETURNING id"
+		query := "INSERT INTO member (party_id, name) VALUES (@id, @name) RETURNING id"
 		args := pgx.StrictNamedArgs{
 			"id":   partyID,
 			"name": name,
 		}
 
 		var id int
-		L.Info("AddUserToPartyByID", "query", query, "args", args)
+		L.Info("AddMemberToPartyByID", "query", query, "args", args)
 		err := tx.QueryRow(ctx, query, args).Scan(&id)
 		if err != nil {
 			L.Error(fmt.Sprintf("Insert failed: %v", err))
@@ -52,16 +52,16 @@ func AddUserToPartyByID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, p
 	})
 }
 
-func PatchUser(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyID int, userID int, name string) error {
+func PatchMember(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyID int, memberID int, name string) error {
 	_, err := WithTx(ctx, db, func(tx pgx.Tx) (struct{}, error) {
-		query := "UPDATE user SET name = @name WHERE id = @id AND party_id = @partyID"
+		query := "UPDATE member SET name = @name WHERE id = @id AND party_id = @partyID"
 		args := pgx.StrictNamedArgs{
 			"name":    name,
-			"id":      userID,
+			"id":      memberID,
 			"partyID": partyID,
 		}
 
-		L.Info("PatchUser", "query", query, "args", args)
+		L.Info("PatchMember", "query", query, "args", args)
 		cmdTag, err := tx.Exec(ctx, query, args)
 		if err != nil {
 			L.Error(fmt.Sprintf("Patch failed: %v", err))
@@ -72,7 +72,7 @@ func PatchUser(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyID in
 			return struct{}{}, errors.New("more than one row affected")
 		}
 		if cmdTag.RowsAffected() == 0 {
-			L.Error(fmt.Sprintf("Patch failed: user %v does not exist", userID))
+			L.Error(fmt.Sprintf("Patch failed: member %v does not exist", memberID))
 			return struct{}{}, pgx.ErrNoRows
 		}
 
@@ -81,15 +81,15 @@ func PatchUser(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyID in
 	return err
 }
 
-func DeleteUser(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyID int, userID int) error {
+func DeleteMember(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyID int, memberID int) error {
 	_, err := WithTx(ctx, db, func(tx pgx.Tx) (struct{}, error) {
-		query := "DELETE FROM user WHERE id = @id AND party_id = @partyID"
+		query := "DELETE FROM member WHERE id = @id AND party_id = @partyID"
 		args := pgx.StrictNamedArgs{
-			"id":      userID,
+			"id":      memberID,
 			"partyID": partyID,
 		}
 
-		L.Info("DeleteUser", "query", query, "args", args)
+		L.Info("DeleteMember", "query", query, "args", args)
 		cmdTag, err := tx.Exec(ctx, query, args)
 		if err != nil {
 			L.Error(fmt.Sprintf("Delete failed: %v", err))
@@ -100,7 +100,7 @@ func DeleteUser(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, partyID i
 			return struct{}{}, errors.New("more than one row affected")
 		}
 		if cmdTag.RowsAffected() == 0 {
-			L.Error(fmt.Sprintf("Delete failed: user %v does not exist", userID))
+			L.Error(fmt.Sprintf("Delete failed: member %v does not exist", memberID))
 			return struct{}{}, pgx.ErrNoRows
 		}
 

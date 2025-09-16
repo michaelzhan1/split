@@ -35,16 +35,16 @@ func main() {
 		r.Patch("/{party_id}", handlers.PatchParty(db, L))
 		r.Delete("/{party_id}", handlers.DeleteParty(db, L))
 
-		r.Get("/{party_id}/users", handlers.GetUsers(db, L))
-		r.Post("/{party_id}/users", handlers.AddUser(db, L))
-		r.Patch("/{party_id}/users/{user_id}", handlers.PatchUser(db, L))
-		r.Delete("/{party_id}/users/{user_id}", handlers.DeleteUser(db, L))
+		r.Get("/{party_id}/members", handlers.GetMembers(db, L))
+		r.Post("/{party_id}/members", handlers.AddMember(db, L))
+		r.Patch("/{party_id}/members/{member_id}", handlers.PatchMember(db, L))
+		r.Delete("/{party_id}/members/{member_id}", handlers.DeleteMember(db, L))
 
 		r.Get("/{party_id}/payments", handlers.GetPayments(db, L))
 		r.Post("/{party_id}/payments", handlers.AddPayment(db, L))
 		r.Patch("/{party_id}/payments/{payment_id}", func(w http.ResponseWriter, r *http.Request) {})
 		r.Delete("/{party_id}/payments/{payment_id}", handlers.DeletePayment(db, L))
-		r.Delete("/{party_id}/payments", func(w http.ResponseWriter, r *http.Request) {}) // delete all
+		r.Delete("/{party_id}/payments", handlers.DeleteAllPayments(db, L)) // delete all
 
 		r.Post("/{party_id}/calculate", func(w http.ResponseWriter, r *http.Request) {})
 	})

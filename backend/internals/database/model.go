@@ -5,7 +5,7 @@ type Party struct {
 	Name string `db:"name"`
 }
 
-type User struct {
+type Member struct {
 	ID      int     `db:"id"`
 	Name    string  `db:"name"`
 	Balance float32 `db:"balance"`

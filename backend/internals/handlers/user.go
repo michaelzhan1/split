@@ -14,7 +14,7 @@ import (
 	"github.com/michaelzhan1/split/internals/database"
 )
 
-func GetUsers(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
+func GetMembers(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -51,7 +51,7 @@ func GetUsers(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		users, err := database.GetUsersByPartyID(ctx, db, L, partyID)
+		members, err := database.GetMembersByPartyID(ctx, db, L, partyID)
 		if err != nil {
 			httpError = &HttpError{
 				Code:    http.StatusInternalServerError,
@@ -60,7 +60,7 @@ func GetUsers(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		res := toUserList(users)
+		res := toMemberList(members)
 		data, _ := json.Marshal(res)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -68,7 +68,7 @@ func GetUsers(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	}
 }
 
-func AddUser(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
+func AddMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	type request struct {
 		Name string `json:"name"`
 	}
@@ -130,7 +130,7 @@ func AddUser(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		id, err := database.AddUserToPartyByID(ctx, db, L, partyID, body.Name)
+		id, err := database.AddMemberToPartyByID(ctx, db, L, partyID, body.Name)
 		if err != nil {
 			httpError = &HttpError{
 				Code:    http.StatusInternalServerError,
@@ -147,7 +147,7 @@ func AddUser(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	}
 }
 
-func PatchUser(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
+func PatchMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	type request struct {
 		Name *string `json:"name"`
 	}
@@ -188,7 +188,7 @@ func PatchUser(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		userID, httpError := withUserID(r)
+		memberID, httpError := withMemberID(r)
 		if httpError != nil {
 			return
 		}
@@ -214,7 +214,7 @@ func PatchUser(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		err = database.PatchUser(ctx, db, L, partyID, userID, *body.Name)
+		err = database.PatchMember(ctx, db, L, partyID, memberID, *body.Name)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -236,7 +236,7 @@ func PatchUser(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	}
 }
 
-func DeleteUser(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
+func DeleteMember(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -273,18 +273,18 @@ func DeleteUser(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		userID, httpError := withUserID(r)
+		memberID, httpError := withMemberID(r)
 		if httpError != nil {
 			return
 		}
 
-		err = database.DeleteUser(ctx, db, L, partyID, userID)
+		err = database.DeleteMember(ctx, db, L, partyID, memberID)
 		if err != nil {
 			var pgErr *pgconn.PgError
 			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
 				httpError = &HttpError{
 					Code:    http.StatusConflict,
-					Message: "Cannot delete user with associated payments",
+					Message: "Cannot delete member with associated payments",
 				}
 			} else if err == pgx.ErrNoRows {
 				httpError = &HttpError{

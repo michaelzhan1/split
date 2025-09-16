@@ -26,22 +26,22 @@ func withPartyID(r *http.Request) (int, *HttpError) {
 	return partyIDInt, nil
 }
 
-func withUserID(r *http.Request) (int, *HttpError) {
-	userIDStr := chi.URLParam(r, "user_id")
-	if userIDStr == "" {
+func withMemberID(r *http.Request) (int, *HttpError) {
+	memberIDStr := chi.URLParam(r, "member_id")
+	if memberIDStr == "" {
 		return 0, &HttpError{
 			Code:    http.StatusBadRequest,
-			Message: "Empty or missing user ID",
+			Message: "Empty or missing member ID",
 		}
 	}
-	userIDInt, err := strconv.Atoi(userIDStr)
-	if err != nil || userIDInt <= 0 {
+	memberIDInt, err := strconv.Atoi(memberIDStr)
+	if err != nil || memberIDInt <= 0 {
 		return 0, &HttpError{
 			Code:    http.StatusBadRequest,
-			Message: "Bad user ID",
+			Message: "Bad member ID",
 		}
 	}
-	return userIDInt, nil
+	return memberIDInt, nil
 }
 
 func withPaymentID(r *http.Request) (int, *HttpError) {
@@ -69,13 +69,13 @@ func toPartyView(party database.Party) Party {
 	}
 }
 
-func toUserList(users []database.User) []User {
-	res := make([]User, 0, len(users))
-	for _, user := range users {
-		res = append(res, User{
-			ID:      user.ID,
-			Name:    user.Name,
-			Balance: user.Balance,
+func toMemberList(members []database.Member) []Member {
+	res := make([]Member, 0, len(members))
+	for _, member := range members {
+		res = append(res, Member{
+			ID:      member.ID,
+			Name:    member.Name,
+			Balance: member.Balance,
 		})
 	}
 	return res
@@ -84,9 +84,9 @@ func toUserList(users []database.User) []User {
 func toPaymentList(payments []database.Payment) []Payment {
 	res := make([]Payment, 0, len(payments))
 	for _, payment := range payments {
-		payees := []User{}
+		payees := []Member{}
 		for idx := range payment.PayeeIDs {
-			payees = append(payees, User{
+			payees = append(payees, Member{
 				ID:      payment.PayeeIDs[idx],
 				Name:    payment.PayeeNames[idx],
 				Balance: payment.PayeeBalances[idx],
@@ -97,7 +97,7 @@ func toPaymentList(payments []database.Payment) []Payment {
 			ID:          payment.ID,
 			Description: payment.Description,
 			Amount:      payment.Amount,
-			Payer: User{
+			Payer: Member{
 				ID:      payment.PayerID,
 				Name:    payment.PayerName,
 				Balance: payment.PayerBalance,
