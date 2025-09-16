@@ -180,6 +180,87 @@ RETURNING id`
 	})
 }
 
+func PatchPayment(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, payment Payment, amount *float32, description *string) error {
+	_, err := WithTx(ctx, db, func(tx pgx.Tx) (struct{}, error) {
+		if description != nil {
+			query := "UPDATE payment SET description = @description WHERE id = @id"
+			args := pgx.StrictNamedArgs{
+				"description": *description,
+				"id":          payment.ID,
+			}
+			L.Info("PatchPayment.description", "query", query, "args", args)
+			cmdTag, err := tx.Exec(ctx, query, args)
+			if err != nil {
+				L.Error(fmt.Sprintf("Update failed: %v", err))
+				return struct{}{}, err
+			}
+			if cmdTag.RowsAffected() != 1 {
+				L.Error("Unexpected number of rows affected in member table")
+				return struct{}{}, errors.New("unexpected number of rows affected")
+			}
+		}
+
+		if amount != nil {
+			// update payment
+			paymentQuery := "UPDATE payment SET amount = @amount WHERE id = @id"
+			paymentArgs := pgx.StrictNamedArgs{
+				"amount": amount,
+				"id":     payment.ID,
+			}
+			L.Info("PatchPayment.paymentAmount", "query", paymentQuery, "args", paymentArgs)
+			cmdTag, err := tx.Exec(ctx, paymentQuery, paymentArgs)
+			if err != nil {
+				L.Error(fmt.Sprintf("Update failed: %v", err))
+				return struct{}{}, err
+			}
+			if cmdTag.RowsAffected() != 1 {
+				L.Error("Unexpected number of rows affected in member table")
+				return struct{}{}, errors.New("unexpected number of rows affected")
+			}
+
+			// update payer balance
+			amtDiff := *amount - payment.Amount
+			payerQuery := "UPDATE member SET balance = balance - @diff WHERE id = @id"
+			payerArgs := pgx.StrictNamedArgs{
+				"diff": amtDiff,
+				"id":   payment.PayerID,
+			}
+			L.Info("PatchPayment.payerBalance", "query", payerQuery, "args", payerArgs)
+			cmdTag, err = tx.Exec(ctx, payerQuery, payerArgs)
+			if err != nil {
+				L.Error(fmt.Sprintf("Update failed: %v", err))
+				return struct{}{}, err
+			}
+			if cmdTag.RowsAffected() != 1 {
+				L.Error("Unexpected number of rows affected in member table")
+				return struct{}{}, errors.New("unexpected number of rows affected")
+			}
+
+			// update payee balances
+			amtDiffPer := amtDiff / float32(len(payment.PayeeIDs))
+			payeeQuery := "UPDATE member SET balance = balance + @amtDiffPer WHERE id = ANY(@ids)"
+			payeeArgs := pgx.StrictNamedArgs{
+				"amtDiffPer": amtDiffPer,
+				"ids":        payment.PayeeIDs,
+			}
+			L.Info("PatchPayment.payeeBalance", "query", payeeQuery, "args", payeeArgs)
+			cmdTag, err = tx.Exec(ctx, payeeQuery, payeeArgs)
+			if err != nil {
+				L.Error(fmt.Sprintf("Update failed: %v", err))
+				return struct{}{}, err
+			}
+			if cmdTag.RowsAffected() != int64(len(payment.PayeeIDs)) {
+				L.Error("Unexpected number of rows affected in member table")
+				return struct{}{}, errors.New("unexpected number of rows affected")
+			}
+		}
+
+		return struct{}{}, nil
+	})
+
+	return err
+}
+
 func DeletePayment(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, payment Payment) error {
 	_, err := WithTx(ctx, db, func(tx pgx.Tx) (struct{}, error) {
 		// update payees
@@ -257,7 +338,7 @@ func DeleteAllPayments(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, pa
 		memberArgs := pgx.StrictNamedArgs{
 			"id": partyID,
 		}
-		L.Info("DeleteAllPayments.delete", "query", memberQuery, "args", memberArgs)
+		L.Info("DeleteAllPayments.deleteAll", "query", memberQuery, "args", memberArgs)
 		_, err = tx.Exec(ctx, memberQuery, memberArgs)
 		if err != nil {
 			L.Error(fmt.Sprintf("Delete failed: %v", err))

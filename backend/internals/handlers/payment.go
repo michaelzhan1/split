@@ -150,6 +150,105 @@ func AddPayment(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	}
 }
 
+func PatchPayment(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
+	type request struct {
+		Amount      *float32    `json:"amount"`
+		Description *string `json:"description"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		var httpError *HttpError
+		defer func() {
+			if httpError != nil {
+				data, _ := json.Marshal(httpError)
+				L.Info(httpError.Message, "code", httpError.Code)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(httpError.Code)
+				w.Write(data)
+			}
+		}()
+
+		partyId, httpError := withPartyID(r)
+		if httpError != nil {
+			return
+		}
+
+		_, err := database.GetPartyByID(ctx, db, L, partyId)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				httpError = &HttpError{
+					Code:    http.StatusNotFound,
+					Message: "Not found",
+				}
+			} else {
+				httpError = &HttpError{
+					Code:    http.StatusInternalServerError,
+					Message: "Internal server error",
+				}
+			}
+			return
+		}
+
+		paymentID, httpError := withPaymentID(r)
+		if httpError != nil {
+			return
+		}
+
+		payment, err := database.GetPaymentByID(ctx, db, L, paymentID)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				httpError = &HttpError{
+					Code:    http.StatusNotFound,
+					Message: "Not found",
+				}
+			} else {
+				httpError = &HttpError{
+					Code:    http.StatusInternalServerError,
+					Message: "Internal server error",
+				}
+			}
+			return
+		}
+
+		var body request
+		err = json.NewDecoder(r.Body).Decode(&body)
+		if err != nil {
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Invalid JSON",
+			}
+			return
+		}
+		if body.Amount == nil && body.Description == nil {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		if body.Amount != nil && *body.Amount <= 0 {
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Invalid amount field",
+			}
+			return
+		}
+
+		err = database.PatchPayment(ctx, db, L, payment, body.Amount, body.Description)
+		if err != nil {
+			httpError = &HttpError{
+				Code:    http.StatusInternalServerError,
+				Message: "Internal server error",
+			}
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("{}"))
+	}
+}
+
 func DeletePayment(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -266,7 +365,7 @@ func DeleteAllPayments(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 			return
 		}
-		
+
 		err = database.DeleteAllPayments(ctx, db, L, partyId)
 		if err != nil {
 			if err == pgx.ErrNoRows {
