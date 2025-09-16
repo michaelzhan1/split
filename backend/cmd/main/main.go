@@ -46,7 +46,7 @@ func main() {
 		r.Delete("/{party_id}/payments/{payment_id}", handlers.DeletePayment(db, L))
 		r.Delete("/{party_id}/payments", handlers.DeleteAllPayments(db, L)) // delete all
 
-		r.Post("/{party_id}/calculate", func(w http.ResponseWriter, r *http.Request) {})
+		r.Post("/{party_id}/calculate", handlers.Calculate(db, L))
 	})
 
 	port := "3000"

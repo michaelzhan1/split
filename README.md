@@ -21,11 +21,11 @@ curl -s -X DELETE localhost:3000/parties/2/members/2
 
 # Payments
 curl -s localhost:3000/parties/2/payments | jq
-curl -s -X POST localhost:3000/parties/2/payments -H "Content-Type: application/json" -d '{"amount": 100, "description": "Hotel", "payer_id": 1, "payee_ids": [1,2]}' | jq
+curl -s -X POST localhost:3000/parties/2/payments -H "Content-Type: application/json" -d '{"amount": 100, "description": "Hotel", "payer_id": 2, "payee_ids": [2,3,4]}' | jq
 curl -s -X PATCH localhost:3000/parties/2/payments/2 -H "Content-Type: application/json" -d '{"amount": 150, "description": "Dinner"}' | jq
 curl -s -X DELETE localhost:3000/parties/2/payments/2
 curl -s -X DELETE localhost:3000/parties/2/payments
 
 # Calculate
-curl -s localhost:3000/parties/2/calculate | jq
+curl -s -X POST localhost:3000/parties/2/calculate | jq
 ```

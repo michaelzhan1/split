@@ -107,3 +107,53 @@ func toPaymentList(payments []database.Payment) []Payment {
 	}
 	return res
 }
+
+// resolve balances
+func calculate(members []database.Member) []IOU {
+	pos := []Member{}
+	neg := []Member{}
+
+	for _, member := range members {
+		if member.Balance > 0 {
+			pos = append(pos, Member{
+				ID:      member.ID,
+				Name:    member.Name,
+				Balance: member.Balance,
+			})
+		} else if member.Balance < 0 {
+			neg = append(neg, Member{
+				ID:      member.ID,
+				Name:    member.Name,
+				Balance: -member.Balance,
+			})
+		}
+	}
+
+
+	ious := []IOU{}
+	i, j := 0, 0
+	for i < len(pos) && j < len(neg) {
+		minAmount := pos[i].Balance
+		if neg[j].Balance < minAmount {
+			minAmount = neg[j].Balance
+		}
+
+		ious = append(ious, IOU{
+			FromID: neg[j].ID,
+			ToID:   pos[i].ID,
+			Amount: minAmount,
+		})
+
+		pos[i].Balance -= minAmount
+		neg[j].Balance -= minAmount
+
+		if pos[i].Balance == 0 {
+			i++
+		}
+		if neg[j].Balance == 0 {
+			j++
+		}
+	}
+
+	return ious
+}

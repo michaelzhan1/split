@@ -27,3 +27,9 @@ type Payment struct {
 	Payer       Member   `json:"payer"`
 	Payees      []Member `json:"payees"`
 }
+
+type IOU struct {
+	FromID int     `json:"from"`
+	ToID   int     `json:"to"`
+	Amount float32 `json:"amount"`
+}
