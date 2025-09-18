@@ -19,6 +19,7 @@ func main() {
 	defer cancel()
 
 	db, err := pgxpool.New(ctx, "postgres://postgres:postgres@localhost:5432/postgres")
+
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		os.Exit(1)
