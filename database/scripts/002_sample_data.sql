@@ -18,3 +18,6 @@ INSERT INTO member_payment (member_id, payment_id)
 SELECT nm.member_id, np.payment_id
 FROM new_member AS nm
 CROSS JOIN new_payment AS np;
+
+INSERT INTO party (name)
+VALUES ('Another test party name');
