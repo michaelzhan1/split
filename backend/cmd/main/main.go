@@ -10,15 +10,21 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	"github.com/michaelzhan1/split/internals/handlers"
 	"github.com/michaelzhan1/split/internals/logs"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("No .env file found")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	db, err := pgxpool.New(ctx, "postgres://postgres:postgres@localhost:5432/postgres")
+	db, err := pgxpool.New(ctx, os.Getenv("DATABASE_URL"))
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
