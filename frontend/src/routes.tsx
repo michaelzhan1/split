@@ -1,4 +1,4 @@
-import { Party } from "src/pages/party";
+import { Group } from "src/pages/group";
 import { Home } from "src/pages/home";
 
 export const routes = [
@@ -7,7 +7,7 @@ export const routes = [
     element: <Home />
   },
   {
-    path: "/:partyId",
-    element: <Party />
+    path: "/:groupId",
+    element: <Group />
   }
 ]
