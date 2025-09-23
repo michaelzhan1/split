@@ -7,7 +7,7 @@ export const routes = [
     element: <Home />,
   },
   {
-    path: '/group/:groupId',
+    path: '/groups/:groupId',
     element: <Group />,
   },
 ];

@@ -9,7 +9,7 @@ export function Home() {
   const onFindGroup = (e: React.FormEvent) => {
     e.preventDefault();
 
-    navigate(`/group/${groupId}`);
+    navigate(`/groups/${groupId}`);
   };
 
   return (
