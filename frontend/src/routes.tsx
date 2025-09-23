@@ -1,13 +1,13 @@
-import { Group } from "src/pages/group";
-import { Home } from "src/pages/home";
+import { Group } from 'src/pages/group.page';
+import { Home } from 'src/pages/home.page';
 
 export const routes = [
   {
-    path: "/",
-    element: <Home />
+    path: '/',
+    element: <Home />,
   },
   {
-    path: "/:groupId",
-    element: <Group />
-  }
-]
+    path: '/group/:groupId',
+    element: <Group />,
+  },
+];
