@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/michaelzhan1/split/internals/handlers"
@@ -35,6 +36,9 @@ func main() {
 	L := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
 	r := chi.NewRouter()
 	r.Use(logs.RequestLogger(L))
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{os.Getenv("FRONTEND_URL")},
+	}))
 
 	r.Route("/parties", func(r chi.Router) {
 		r.Post("/", handlers.CreateParty(db, L))
