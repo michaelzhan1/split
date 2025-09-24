@@ -1,16 +1,18 @@
 import { skipToken, useQuery } from '@tanstack/react-query';
 
 import type { AxiosError } from 'axios';
-import { useParams } from 'react-router';
+import { useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router';
 import { getGroupById } from 'src/services/group.service';
 import { getMembersByGroupId } from 'src/services/member.service';
 import type { Group, Member } from 'src/types/common.type';
 
 export function Group() {
   const { groupId = '' } = useParams();
+  const navigate = useNavigate();
 
   // group info
-  const { data: group = null, isFetching: isFetchingGroup } = useQuery<
+  const { data: group = null, isFetching: isFetchingGroup, error: groupError } = useQuery<
     Group,
     AxiosError
   >({
@@ -18,14 +20,32 @@ export function Group() {
     queryFn: () => getGroupById(Number(groupId)),
   });
 
+  useEffect(() => {
+    if (groupError) {
+      console.error('Error fetching group:', groupError);
+      alert(`Failed to fetch group: ${groupError.message}`);
+      navigate('/');
+    }
+  }, [groupError, navigate]);
+
   // member info
-  const { data: members = [], isFetching: isFetchingMembers } = useQuery<
-    Member[],
-    AxiosError
-  >({
+  const {
+    data: members = [],
+    isFetching: isFetchingMembers,
+    error: membersError,
+  } = useQuery<Member[], AxiosError>({
     queryKey: ['members', groupId],
     queryFn: group ? () => getMembersByGroupId(group.id) : skipToken,
   });
+
+  useEffect(() => {
+    console.log(membersError)
+    if (membersError) {
+      console.error('Error fetching members:', membersError);
+      alert('Failed to fetch members. Please try again.');
+      navigate('/');
+    }
+  }, [membersError, navigate]);
 
   const isLoading = isFetchingGroup || isFetchingMembers;
 

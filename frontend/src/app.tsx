@@ -6,7 +6,13 @@ import { routes } from 'src/routes';
 
 function App() {
   const router = createBrowserRouter(routes);
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 2,
+      },
+    },
+  });
 
   return (
     <div className='app'>
