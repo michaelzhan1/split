@@ -1,17 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { skipToken, useQuery } from '@tanstack/react-query';
+import { skipToken, useMutation, useQuery } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
-import { Modal } from 'src/components/modal.component';
+import { AddMemberModal } from 'src/components/add-member-modal.component';
 import { getGroupById } from 'src/services/group.service';
-import { getMembersByGroupId } from 'src/services/member.service';
+import {
+  addMembertoGroup,
+  getMembersByGroupId,
+} from 'src/services/member.service';
 import type { Group, Member } from 'src/types/common.type';
 
 export function Group() {
   const { groupId = '' } = useParams();
   const navigate = useNavigate();
+  const [addMemberModalOpen, setAddMemberModalOpen] = useState<boolean>(false);
 
   // group info
   const {
@@ -35,6 +39,7 @@ export function Group() {
   const {
     data: members = [],
     isFetching: isFetchingMembers,
+    refetch: refetchMembers,
     error: membersError,
   } = useQuery<Member[], AxiosError>({
     queryKey: ['members', groupId],
@@ -42,7 +47,6 @@ export function Group() {
   });
 
   useEffect(() => {
-    console.log(membersError);
     if (membersError) {
       console.error('Error fetching members:', membersError);
       alert('Failed to fetch members. Please try again.');
@@ -50,22 +54,44 @@ export function Group() {
     }
   }, [membersError, navigate]);
 
-  const isLoading = isFetchingGroup || isFetchingMembers;
+  // add a member
+  const { mutate: addMemberMutate, isPending: isPendingAddMember } =
+    useMutation<{ id: number }, AxiosError, { name: string }>({
+      mutationFn: (variables: { name: string }) => {
+        return addMembertoGroup(Number(groupId), variables.name);
+      },
+    });
+  const onAddMember = (name: string) =>
+    addMemberMutate(
+      { name },
+      {
+        onSuccess: () => {
+          refetchMembers();
+          setAddMemberModalOpen(false);
+        },
+        onError: (error) => {
+          console.error('Error adding member:', error);
+          alert('Failed to add member. Please try again');
+        },
+      },
+    );
+
+  const isLoading = isFetchingGroup || isFetchingMembers || isPendingAddMember;
 
   return !group || isLoading ? (
     <div>Loading...</div>
   ) : (
     <>
-      <Modal
-        isOpen={true}
-        onClose={() => {}}
-        title='Group Details'
-        onSubmit={() => {}}
-      >
-        Test
-      </Modal>
+      <AddMemberModal
+        isOpen={addMemberModalOpen}
+        onClose={() => setAddMemberModalOpen(false)}
+        onSubmit={(name: string) => onAddMember(name)}
+      />
       <div>
         <h1>Group: {group.name}</h1>
+      </div>
+      <div>
+        <button onClick={() => setAddMemberModalOpen(true)}>Add member</button>
       </div>
       <div>
         <table>

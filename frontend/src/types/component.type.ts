@@ -7,3 +7,9 @@ export interface ModalProps {
   onSubmit: () => void;
   children: ReactNode;
 }
+
+export interface AddMemberModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (name: string) => void;
+}

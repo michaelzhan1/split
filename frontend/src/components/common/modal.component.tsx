@@ -2,12 +2,13 @@ import { createPortal } from 'react-dom';
 
 import type { ModalProps } from 'src/types/component.type';
 
-import 'src/components/modal.component.css';
+import 'src/components/common/modal.component.css';
 
 export function Modal({
   isOpen,
   onClose,
   title,
+  onSubmit,
   children,
 }: ModalProps) {
   return createPortal(
@@ -21,7 +22,9 @@ export function Modal({
           <hr />
           <div className='modal-body'>{children}</div>
           <div className='modal-buttons'>
-            <button className='submit-button'>Submit</button>
+            <button className='submit-button' onClick={onSubmit}>
+              Submit
+            </button>
             <button className='cancel-button' onClick={onClose}>
               Cancel
             </button>
