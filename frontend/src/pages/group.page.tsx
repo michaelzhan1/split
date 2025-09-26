@@ -5,7 +5,8 @@ import { skipToken, useMutation, useQuery } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
 import { AddMemberModal } from 'src/components/add-member-modal.component';
-import { getGroupById } from 'src/services/group.service';
+import { PatchGroupModal } from 'src/components/patch-group-modal.component';
+import { getGroupById, patchGroup } from 'src/services/group.service';
 import {
   addMembertoGroup,
   getMembersByGroupId,
@@ -16,11 +17,14 @@ export function Group() {
   const { groupId = '' } = useParams();
   const navigate = useNavigate();
   const [addMemberModalOpen, setAddMemberModalOpen] = useState<boolean>(false);
+  const [patchGroupModalOpen, setPatchGroupModalOpen] =
+    useState<boolean>(false);
 
   // group info
   const {
     data: group = null,
     isFetching: isFetchingGroup,
+    refetch: refetchGroup,
     error: groupError,
   } = useQuery<Group, AxiosError>({
     queryKey: ['group', groupId],
@@ -34,6 +38,28 @@ export function Group() {
       navigate('/');
     }
   }, [groupError, navigate]);
+
+  // patch a group
+  const { mutate: patchGroupMutate, isPending: isPendingPatchGroup } =
+    useMutation<void, AxiosError, { name: string }>({
+      mutationFn: (variables: { name: string }) => {
+        return patchGroup(Number(groupId), variables.name);
+      },
+    });
+  const onPatchGroup = (name: string) =>
+    patchGroupMutate(
+      { name },
+      {
+        onSuccess: () => {
+          refetchGroup();
+          setPatchGroupModalOpen(false);
+        },
+        onError: (error) => {
+          console.error('Error updating group:', error);
+          alert('Failed to update group. Please try again');
+        },
+      },
+    );
 
   // member info
   const {
@@ -50,9 +76,8 @@ export function Group() {
     if (membersError) {
       console.error('Error fetching members:', membersError);
       alert('Failed to fetch members. Please try again.');
-      navigate('/');
     }
-  }, [membersError, navigate]);
+  }, [membersError]);
 
   // add a member
   const { mutate: addMemberMutate, isPending: isPendingAddMember } =
@@ -76,12 +101,22 @@ export function Group() {
       },
     );
 
-  const isLoading = isFetchingGroup || isFetchingMembers || isPendingAddMember;
+  const isLoading =
+    isFetchingGroup ||
+    isPendingPatchGroup ||
+    isFetchingMembers ||
+    isPendingAddMember;
 
   return !group || isLoading ? (
     <div>Loading...</div>
   ) : (
     <>
+      <PatchGroupModal
+        isOpen={patchGroupModalOpen}
+        onClose={() => setPatchGroupModalOpen(false)}
+        onSubmit={(name: string) => onPatchGroup(name)}
+        initialName={group.name}
+      />
       <AddMemberModal
         isOpen={addMemberModalOpen}
         onClose={() => setAddMemberModalOpen(false)}
@@ -89,6 +124,9 @@ export function Group() {
       />
       <div>
         <h1>Group: {group.name}</h1>
+        <button onClick={() => setPatchGroupModalOpen(true)}>
+          Edit group name
+        </button>
       </div>
       <div>
         <button onClick={() => setAddMemberModalOpen(true)}>Add member</button>

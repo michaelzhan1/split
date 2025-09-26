@@ -38,6 +38,7 @@ func main() {
 	r.Use(logs.RequestLogger(L))
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{os.Getenv("FRONTEND_URL")},
+		AllowedMethods: []string{"GET", "POST", "PATCH", "DELETE"},
 	}))
 
 	r.Route("/parties", func(r chi.Router) {

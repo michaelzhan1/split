@@ -13,3 +13,10 @@ export interface AddMemberModalProps {
   onClose: () => void;
   onSubmit: (name: string) => void;
 }
+
+export interface PatchGroupModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (name: string) => void;
+  initialName: string;
+}
