@@ -1,8 +1,10 @@
-import { skipToken, useQuery } from '@tanstack/react-query';
-
-import type { AxiosError } from 'axios';
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
+
+import { skipToken, useQuery } from '@tanstack/react-query';
+import type { AxiosError } from 'axios';
+
+import { Modal } from 'src/components/modal.component';
 import { getGroupById } from 'src/services/group.service';
 import { getMembersByGroupId } from 'src/services/member.service';
 import type { Group, Member } from 'src/types/common.type';
@@ -12,10 +14,11 @@ export function Group() {
   const navigate = useNavigate();
 
   // group info
-  const { data: group = null, isFetching: isFetchingGroup, error: groupError } = useQuery<
-    Group,
-    AxiosError
-  >({
+  const {
+    data: group = null,
+    isFetching: isFetchingGroup,
+    error: groupError,
+  } = useQuery<Group, AxiosError>({
     queryKey: ['group', groupId],
     queryFn: () => getGroupById(Number(groupId)),
   });
@@ -39,7 +42,7 @@ export function Group() {
   });
 
   useEffect(() => {
-    console.log(membersError)
+    console.log(membersError);
     if (membersError) {
       console.error('Error fetching members:', membersError);
       alert('Failed to fetch members. Please try again.');
@@ -53,6 +56,14 @@ export function Group() {
     <div>Loading...</div>
   ) : (
     <>
+      <Modal
+        isOpen={true}
+        onClose={() => {}}
+        title='Group Details'
+        onSubmit={() => {}}
+      >
+        Test
+      </Modal>
       <div>
         <h1>Group: {group.name}</h1>
       </div>

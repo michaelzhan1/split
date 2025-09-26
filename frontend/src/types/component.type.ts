@@ -1,8 +1,9 @@
-import type { ComponentProps } from 'react';
+import type { ReactNode } from 'react';
 
 export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  primaryActions?: ComponentProps<'button'>[];
+  onSubmit: () => void;
+  children: ReactNode;
 }
