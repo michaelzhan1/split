@@ -49,6 +49,10 @@ export function Home() {
           type='submit'
           onClick={(e) => {
             e.preventDefault();
+            if (groupId === '') {
+              alert('Please enter a valid group code.');
+              return;
+            }
             navigate(`/groups/${groupId}`);
           }}
         >
@@ -71,6 +75,10 @@ export function Home() {
           type='submit'
           onClick={(e) => {
             e.preventDefault();
+            if (groupName === '') {
+              alert('Please enter a valid group name.');
+              return;
+            }
             onCreateGroup(groupName);
           }}
           disabled={isPendingCreateGroup}
