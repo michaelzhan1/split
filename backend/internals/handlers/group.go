@@ -12,7 +12,7 @@ import (
 	"github.com/michaelzhan1/split/internals/database"
 )
 
-func GetParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
+func GetGroup(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -28,12 +28,12 @@ func GetParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyID, httpError := withPartyID(r)
+		groupID, httpError := withGroupID(r)
 		if httpError != nil {
 			return
 		}
 
-		party, err := database.GetPartyByID(ctx, db, L, partyID)
+		group, err := database.GetGroupByID(ctx, db, L, groupID)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -49,7 +49,7 @@ func GetParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		res := toPartyView(party)
+		res := toGroupView(group)
 		data, _ := json.Marshal(res)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -57,7 +57,7 @@ func GetParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	}
 }
 
-func CreateParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
+func CreateGroup(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	type request struct {
 		Name string `json:"name"`
 	}
@@ -98,7 +98,7 @@ func CreateParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		id, err := database.CreateParty(ctx, db, L, body.Name)
+		id, err := database.CreateGroup(ctx, db, L, body.Name)
 		if err != nil {
 			httpError = &HttpError{
 				Code:    http.StatusInternalServerError,
@@ -115,7 +115,7 @@ func CreateParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	}
 }
 
-func PatchParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
+func PatchGroup(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	type request struct {
 		Name *string `json:"name"`
 	}
@@ -135,7 +135,7 @@ func PatchParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyID, httpError := withPartyID(r)
+		groupID, httpError := withGroupID(r)
 		if httpError != nil {
 			return
 		}
@@ -161,7 +161,7 @@ func PatchParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		err = database.PatchParty(ctx, db, L, partyID, *body.Name)
+		err = database.PatchGroup(ctx, db, L, groupID, *body.Name)
 		if err != nil {
 			httpError = &HttpError{
 				Code:    http.StatusInternalServerError,
@@ -176,7 +176,7 @@ func PatchParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	}
 }
 
-func DeleteParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
+func DeleteGroup(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -192,12 +192,12 @@ func DeleteParty(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyID, httpError := withPartyID(r)
+		groupID, httpError := withGroupID(r)
 		if httpError != nil {
 			return
 		}
 
-		err := database.DeleteParty(ctx, db, L, partyID)
+		err := database.DeleteGroup(ctx, db, L, groupID)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{

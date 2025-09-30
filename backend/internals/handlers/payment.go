@@ -28,12 +28,12 @@ func GetPayments(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyID, httpError := withPartyID(r)
+		groupID, httpError := withGroupID(r)
 		if httpError != nil {
 			return
 		}
 
-		_, err := database.GetPartyByID(ctx, db, L, partyID)
+		_, err := database.GetGroupByID(ctx, db, L, groupID)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -49,7 +49,7 @@ func GetPayments(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		payments, err := database.GetPaymentsByPartyID(ctx, db, L, partyID)
+		payments, err := database.GetPaymentsByGroupID(ctx, db, L, groupID)
 		if err != nil {
 			httpError = &HttpError{
 				Code:    http.StatusInternalServerError,
@@ -88,12 +88,12 @@ func AddPayment(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId, httpError := withPartyID(r)
+		groupId, httpError := withGroupID(r)
 		if httpError != nil {
 			return
 		}
 
-		_, err := database.GetPartyByID(ctx, db, L, partyId)
+		_, err := database.GetGroupByID(ctx, db, L, groupId)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -133,7 +133,7 @@ func AddPayment(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		id, err := database.AddPaymentByPartyId(ctx, db, L, partyId, body)
+		id, err := database.AddPaymentByGroupId(ctx, db, L, groupId, body)
 		if err != nil {
 			httpError = &HttpError{
 				Code:    http.StatusInternalServerError,
@@ -171,12 +171,12 @@ func PatchPayment(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId, httpError := withPartyID(r)
+		groupId, httpError := withGroupID(r)
 		if httpError != nil {
 			return
 		}
 
-		_, err := database.GetPartyByID(ctx, db, L, partyId)
+		_, err := database.GetGroupByID(ctx, db, L, groupId)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -265,12 +265,12 @@ func DeletePayment(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId, httpError := withPartyID(r)
+		groupId, httpError := withGroupID(r)
 		if httpError != nil {
 			return
 		}
 
-		_, err := database.GetPartyByID(ctx, db, L, partyId)
+		_, err := database.GetGroupByID(ctx, db, L, groupId)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -345,12 +345,12 @@ func DeleteAllPayments(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId, httpError := withPartyID(r)
+		groupId, httpError := withGroupID(r)
 		if httpError != nil {
 			return
 		}
 
-		_, err := database.GetPartyByID(ctx, db, L, partyId)
+		_, err := database.GetGroupByID(ctx, db, L, groupId)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -366,7 +366,7 @@ func DeleteAllPayments(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		err = database.DeleteAllPayments(ctx, db, L, partyId)
+		err = database.DeleteAllPayments(ctx, db, L, groupId)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{

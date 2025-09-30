@@ -41,24 +41,24 @@ func main() {
 		AllowedMethods: []string{"GET", "POST", "PATCH", "DELETE"},
 	}))
 
-	r.Route("/parties", func(r chi.Router) {
-		r.Post("/", handlers.CreateParty(db, L))
-		r.Get("/{party_id}", handlers.GetParty(db, L))
-		r.Patch("/{party_id}", handlers.PatchParty(db, L))
-		r.Delete("/{party_id}", handlers.DeleteParty(db, L)) // will need to figure out cascade delete
+	r.Route("/groups", func(r chi.Router) {
+		r.Post("/", handlers.CreateGroup(db, L))
+		r.Get("/{group_id}", handlers.GetGroup(db, L))
+		r.Patch("/{group_id}", handlers.PatchGroup(db, L))
+		r.Delete("/{group_id}", handlers.DeleteGroup(db, L)) // will need to figure out cascade delete
 
-		r.Get("/{party_id}/members", handlers.GetMembers(db, L))
-		r.Post("/{party_id}/members", handlers.AddMember(db, L))
-		r.Patch("/{party_id}/members/{member_id}", handlers.PatchMember(db, L))
-		r.Delete("/{party_id}/members/{member_id}", handlers.DeleteMember(db, L))
+		r.Get("/{group_id}/users", handlers.GetUsers(db, L))
+		r.Post("/{group_id}/users", handlers.AddUser(db, L))
+		r.Patch("/{group_id}/users/{user_id}", handlers.PatchUser(db, L))
+		r.Delete("/{group_id}/users/{user_id}", handlers.DeleteUser(db, L))
 
-		r.Get("/{party_id}/payments", handlers.GetPayments(db, L))
-		r.Post("/{party_id}/payments", handlers.AddPayment(db, L))
-		r.Patch("/{party_id}/payments/{payment_id}", handlers.PatchPayment(db, L))
-		r.Delete("/{party_id}/payments/{payment_id}", handlers.DeletePayment(db, L))
-		r.Delete("/{party_id}/payments", handlers.DeleteAllPayments(db, L)) // delete all
+		r.Get("/{group_id}/payments", handlers.GetPayments(db, L))
+		r.Post("/{group_id}/payments", handlers.AddPayment(db, L))
+		r.Patch("/{group_id}/payments/{payment_id}", handlers.PatchPayment(db, L))
+		r.Delete("/{group_id}/payments/{payment_id}", handlers.DeletePayment(db, L))
+		r.Delete("/{group_id}/payments", handlers.DeleteAllPayments(db, L)) // delete all
 
-		r.Post("/{party_id}/calculate", handlers.Calculate(db, L))
+		r.Post("/{group_id}/calculate", handlers.Calculate(db, L))
 	})
 
 	port := "3000"
