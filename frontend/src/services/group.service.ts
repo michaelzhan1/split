@@ -1,4 +1,5 @@
 import axios, { type AxiosResponse } from 'axios';
+
 import type { Group } from 'src/types/common.type';
 
 export async function getGroupById(id: number): Promise<Group> {
@@ -15,4 +16,13 @@ export async function createGroup(name: string): Promise<{ id: number }> {
       { name: string }
     >(`${import.meta.env.VITE_API_PREFIX}/parties`, { name })
     .then((res) => res.data);
+}
+
+export async function patchGroup(id: number, name: string): Promise<void> {
+  await axios.patch<void, AxiosResponse, { name: string }>(
+    `${import.meta.env.VITE_API_PREFIX}/parties/${id}`,
+    {
+      name,
+    },
+  );
 }
