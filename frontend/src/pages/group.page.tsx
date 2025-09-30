@@ -6,19 +6,25 @@ import type { AxiosError } from 'axios';
 
 import { AddMemberModal } from 'src/components/add-member-modal.component';
 import { PatchGroupModal } from 'src/components/patch-group-modal.component';
+import { PatchMemberModal } from 'src/components/patch-member-modal.component';
 import { getGroupById, patchGroup } from 'src/services/group.service';
 import {
   addMembertoGroup,
   getMembersByGroupId,
+  patchMember,
 } from 'src/services/member.service';
 import type { Group, Member } from 'src/types/common.type';
 
 export function Group() {
   const { groupId = '' } = useParams();
   const navigate = useNavigate();
-  const [addMemberModalOpen, setAddMemberModalOpen] = useState<boolean>(false);
   const [patchGroupModalOpen, setPatchGroupModalOpen] =
     useState<boolean>(false);
+  const [addMemberModalOpen, setAddMemberModalOpen] = useState<boolean>(false);
+  const [patchMemberModalOpen, setPatchMemberModalOpen] =
+    useState<boolean>(false);
+
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
   // group info
   const {
@@ -101,11 +107,35 @@ export function Group() {
       },
     );
 
+  // patch a member
+  const { mutate: patchMemberMutate, isPending: isPendingPatchMember } =
+    useMutation<void, AxiosError, { memberId: number; name: string }>({
+      mutationFn: (variables: { memberId: number; name: string }) => {
+        return patchMember(Number(groupId), variables.memberId, variables.name);
+      },
+    });
+  const onPatchMember = (memberId: number, name: string) =>
+    patchMemberMutate(
+      { memberId, name },
+      {
+        onSuccess: () => {
+          refetchMembers();
+          setPatchMemberModalOpen(false);
+          setSelectedMember(null);
+        },
+        onError: (error) => {
+          console.error('Error updating member:', error);
+          alert('Failed to update member. Please try again');
+        },
+      },
+    );
+
   const isLoading =
     isFetchingGroup ||
     isPendingPatchGroup ||
     isFetchingMembers ||
-    isPendingAddMember;
+    isPendingAddMember ||
+    isPendingPatchMember;
 
   return !group || isLoading ? (
     <div>Loading...</div>
@@ -122,6 +152,17 @@ export function Group() {
         onClose={() => setAddMemberModalOpen(false)}
         onSubmit={(name: string) => onAddMember(name)}
       />
+
+      {selectedMember && (
+        <PatchMemberModal
+          isOpen={patchMemberModalOpen}
+          onClose={() => setPatchMemberModalOpen(false)}
+          onSubmit={(memberId: number, name: string) =>
+            onPatchMember(memberId, name)
+          }
+          member={selectedMember}
+        />
+      )}
       <div>
         <h1>Group: {group.name}</h1>
         <button onClick={() => setPatchGroupModalOpen(true)}>
@@ -144,6 +185,16 @@ export function Group() {
               <tr key={member.id}>
                 <td>{member.name}</td>
                 <td>{member.balance}</td>
+                <td>
+                  <button
+                    onClick={() => {
+                      setSelectedMember(member);
+                      setPatchMemberModalOpen(true);
+                    }}
+                  >
+                    Edit
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { Member } from 'src/types/common.type';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -19,4 +20,11 @@ export interface PatchGroupModalProps {
   onClose: () => void;
   onSubmit: (name: string) => void;
   initialName: string;
+}
+
+export interface PatchMemberModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (id: number, name: string) => void;
+  member: Member;
 }

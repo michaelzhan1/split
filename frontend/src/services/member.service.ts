@@ -20,3 +20,16 @@ export async function addMembertoGroup(
     >(`${import.meta.env.VITE_API_PREFIX}/parties/${id}/members`, { name })
     .then((res) => res.data);
 }
+
+export async function patchMember(
+  partyId: number,
+  id: number,
+  name: string,
+): Promise<void> {
+  await axios.patch<void, AxiosResponse, { name: string }>(
+    `${import.meta.env.VITE_API_PREFIX}/parties/${partyId}/members/${id}`,
+    {
+      name,
+    },
+  );
+}
