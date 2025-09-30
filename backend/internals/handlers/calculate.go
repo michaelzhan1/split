@@ -32,12 +32,12 @@ func Calculate(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 		}()
 
-		partyId, httpError := withPartyID(r)
+		groupId, httpError := withGroupID(r)
 		if httpError != nil {
 			return
 		}
 
-		_, err := database.GetPartyByID(ctx, db, L, partyId)
+		_, err := database.GetGroupByID(ctx, db, L, groupId)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				httpError = &HttpError{
@@ -53,7 +53,7 @@ func Calculate(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		members, err := database.GetMembersByPartyID(ctx, db, L, partyId)
+		users, err := database.GetUsersByGroupID(ctx, db, L, groupId)
 		if err != nil {
 			httpError = &HttpError{
 				Code:    http.StatusInternalServerError,
@@ -63,7 +63,7 @@ func Calculate(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 		}
 
 		// calculate ious
-		ious := calculate(members)
+		ious := calculate(users)
 		res := response{ious}
 		data, _ := json.Marshal(res)
 		w.Header().Set("Content-Type", "application/json")

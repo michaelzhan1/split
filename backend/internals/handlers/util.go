@@ -8,40 +8,40 @@ import (
 	"github.com/michaelzhan1/split/internals/database"
 )
 
-func withPartyID(r *http.Request) (int, *HttpError) {
-	partyIDStr := chi.URLParam(r, "party_id")
-	if partyIDStr == "" {
+func withGroupID(r *http.Request) (int, *HttpError) {
+	groupIDStr := chi.URLParam(r, "group_id")
+	if groupIDStr == "" {
 		return 0, &HttpError{
 			Code:    http.StatusBadRequest,
-			Message: "Empty or missing party ID",
+			Message: "Empty or missing group ID",
 		}
 	}
-	partyIDInt, err := strconv.Atoi(partyIDStr)
-	if err != nil || partyIDInt <= 0 {
+	groupIDInt, err := strconv.Atoi(groupIDStr)
+	if err != nil || groupIDInt <= 0 {
 		return 0, &HttpError{
 			Code:    http.StatusBadRequest,
-			Message: "Bad party ID",
+			Message: "Bad group ID",
 		}
 	}
-	return partyIDInt, nil
+	return groupIDInt, nil
 }
 
-func withMemberID(r *http.Request) (int, *HttpError) {
-	memberIDStr := chi.URLParam(r, "member_id")
-	if memberIDStr == "" {
+func withUserID(r *http.Request) (int, *HttpError) {
+	userIDStr := chi.URLParam(r, "user_id")
+	if userIDStr == "" {
 		return 0, &HttpError{
 			Code:    http.StatusBadRequest,
-			Message: "Empty or missing member ID",
+			Message: "Empty or missing user ID",
 		}
 	}
-	memberIDInt, err := strconv.Atoi(memberIDStr)
-	if err != nil || memberIDInt <= 0 {
+	userIDInt, err := strconv.Atoi(userIDStr)
+	if err != nil || userIDInt <= 0 {
 		return 0, &HttpError{
 			Code:    http.StatusBadRequest,
-			Message: "Bad member ID",
+			Message: "Bad user ID",
 		}
 	}
-	return memberIDInt, nil
+	return userIDInt, nil
 }
 
 func withPaymentID(r *http.Request) (int, *HttpError) {
@@ -62,20 +62,20 @@ func withPaymentID(r *http.Request) (int, *HttpError) {
 	return paymentIDInt, nil
 }
 
-func toPartyView(party database.Party) Party {
-	return Party{
-		ID:   party.ID,
-		Name: party.Name,
+func toGroupView(group database.Group) Group {
+	return Group{
+		ID:   group.ID,
+		Name: group.Name,
 	}
 }
 
-func toMemberList(members []database.Member) []Member {
-	res := make([]Member, 0, len(members))
-	for _, member := range members {
-		res = append(res, Member{
-			ID:      member.ID,
-			Name:    member.Name,
-			Balance: member.Balance,
+func toUserList(users []database.User) []User {
+	res := make([]User, 0, len(users))
+	for _, user := range users {
+		res = append(res, User{
+			ID:      user.ID,
+			Name:    user.Name,
+			Balance: user.Balance,
 		})
 	}
 	return res
@@ -84,9 +84,9 @@ func toMemberList(members []database.Member) []Member {
 func toPaymentList(payments []database.Payment) []Payment {
 	res := make([]Payment, 0, len(payments))
 	for _, payment := range payments {
-		payees := []Member{}
+		payees := []User{}
 		for idx := range payment.PayeeIDs {
-			payees = append(payees, Member{
+			payees = append(payees, User{
 				ID:      payment.PayeeIDs[idx],
 				Name:    payment.PayeeNames[idx],
 				Balance: payment.PayeeBalances[idx],
@@ -97,7 +97,7 @@ func toPaymentList(payments []database.Payment) []Payment {
 			ID:          payment.ID,
 			Description: payment.Description,
 			Amount:      payment.Amount,
-			Payer: Member{
+			Payer: User{
 				ID:      payment.PayerID,
 				Name:    payment.PayerName,
 				Balance: payment.PayerBalance,
@@ -109,22 +109,22 @@ func toPaymentList(payments []database.Payment) []Payment {
 }
 
 // resolve balances
-func calculate(members []database.Member) []IOU {
-	pos := []Member{}
-	neg := []Member{}
+func calculate(users []database.User) []IOU {
+	pos := []User{}
+	neg := []User{}
 
-	for _, member := range members {
-		if member.Balance > 0 {
-			pos = append(pos, Member{
-				ID:      member.ID,
-				Name:    member.Name,
-				Balance: member.Balance,
+	for _, user := range users {
+		if user.Balance > 0 {
+			pos = append(pos, User{
+				ID:      user.ID,
+				Name:    user.Name,
+				Balance: user.Balance,
 			})
-		} else if member.Balance < 0 {
-			neg = append(neg, Member{
-				ID:      member.ID,
-				Name:    member.Name,
-				Balance: -member.Balance,
+		} else if user.Balance < 0 {
+			neg = append(neg, User{
+				ID:      user.ID,
+				Name:    user.Name,
+				Balance: -user.Balance,
 			})
 		}
 	}

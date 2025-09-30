@@ -1,11 +1,11 @@
 package database
 
-type Party struct {
+type Group struct {
 	ID   int    `db:"id"`
 	Name string `db:"name"`
 }
 
-type Member struct {
+type User struct {
 	ID      int     `db:"id"`
 	Name    string  `db:"name"`
 	Balance float32 `db:"balance"`

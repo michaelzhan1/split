@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS groups;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS payment;
-DROP TABLE IF EXISTS user_payment;
+DROP TABLE IF EXISTS users_payment;
 
 CREATE TABLE groups (
     id SERIAL PRIMARY KEY,
