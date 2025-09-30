@@ -45,7 +45,7 @@ func main() {
 		r.Post("/", handlers.CreateParty(db, L))
 		r.Get("/{party_id}", handlers.GetParty(db, L))
 		r.Patch("/{party_id}", handlers.PatchParty(db, L))
-		r.Delete("/{party_id}", handlers.DeleteParty(db, L))
+		r.Delete("/{party_id}", handlers.DeleteParty(db, L)) // will need to figure out cascade delete
 
 		r.Get("/{party_id}/members", handlers.GetMembers(db, L))
 		r.Post("/{party_id}/members", handlers.AddMember(db, L))
