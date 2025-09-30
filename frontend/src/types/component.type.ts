@@ -28,3 +28,11 @@ export interface PatchMemberModalProps {
   onSubmit: (id: number, name: string) => void;
   member: Member;
 }
+
+export interface ConfirmationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  content: string;
+  onSubmit: () => void;
+}

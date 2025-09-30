@@ -33,3 +33,9 @@ export async function patchMember(
     },
   );
 }
+
+export async function deleteMember(partyId: number, id: number): Promise<void> {
+  await axios.delete<void, AxiosResponse, { name: string }>(
+    `${import.meta.env.VITE_API_PREFIX}/parties/${partyId}/members/${id}`,
+  );
+}

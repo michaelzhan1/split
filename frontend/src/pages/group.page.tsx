@@ -5,11 +5,13 @@ import { skipToken, useMutation, useQuery } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
 import { AddMemberModal } from 'src/components/add-member-modal.component';
+import { ConfirmationModal } from 'src/components/confirmation-modal.component';
 import { PatchGroupModal } from 'src/components/patch-group-modal.component';
 import { PatchMemberModal } from 'src/components/patch-member-modal.component';
 import { getGroupById, patchGroup } from 'src/services/group.service';
 import {
   addMembertoGroup,
+  deleteMember,
   getMembersByGroupId,
   patchMember,
 } from 'src/services/member.service';
@@ -22,6 +24,8 @@ export function Group() {
     useState<boolean>(false);
   const [addMemberModalOpen, setAddMemberModalOpen] = useState<boolean>(false);
   const [patchMemberModalOpen, setPatchMemberModalOpen] =
+    useState<boolean>(false);
+  const [deleteMemberModalOpen, setDeleteMemberModalOpen] =
     useState<boolean>(false);
 
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -130,12 +134,36 @@ export function Group() {
       },
     );
 
+  // delete a member
+  const { mutate: deleteMemberMutate, isPending: isPendingDeleteMember } =
+    useMutation<void, AxiosError, { memberId: number }>({
+      mutationFn: (variables: { memberId: number }) => {
+        return deleteMember(Number(groupId), variables.memberId);
+      },
+    });
+  const onDeleteMember = (memberId: number) =>
+    deleteMemberMutate(
+      { memberId },
+      {
+        onSuccess: () => {
+          refetchMembers();
+          setPatchMemberModalOpen(false);
+          setSelectedMember(null);
+        },
+        onError: (error) => {
+          console.error('Error deleting member:', error);
+          alert('Failed to delete member. Please try again');
+        },
+      },
+    );
+
   const isLoading =
     isFetchingGroup ||
     isPendingPatchGroup ||
     isFetchingMembers ||
     isPendingAddMember ||
-    isPendingPatchMember;
+    isPendingPatchMember ||
+    isPendingDeleteMember;
 
   return !group || isLoading ? (
     <div>Loading...</div>
@@ -154,14 +182,26 @@ export function Group() {
       />
 
       {selectedMember && (
-        <PatchMemberModal
-          isOpen={patchMemberModalOpen}
-          onClose={() => setPatchMemberModalOpen(false)}
-          onSubmit={(memberId: number, name: string) =>
-            onPatchMember(memberId, name)
-          }
-          member={selectedMember}
-        />
+        <>
+          <PatchMemberModal
+            isOpen={patchMemberModalOpen}
+            onClose={() => setPatchMemberModalOpen(false)}
+            onSubmit={(memberId: number, name: string) =>
+              onPatchMember(memberId, name)
+            }
+            member={selectedMember}
+          />
+          <ConfirmationModal
+            isOpen={deleteMemberModalOpen}
+            onClose={() => setDeleteMemberModalOpen(false)}
+            title='Delete Member'
+            content={`Are you sure you want to delete member "${selectedMember.name}"? This action cannot be undone.`}
+            onSubmit={() => {
+              onDeleteMember(selectedMember.id);
+              setDeleteMemberModalOpen(false);
+            }}
+          />
+        </>
       )}
       <div>
         <h1>Group: {group.name}</h1>
@@ -193,6 +233,16 @@ export function Group() {
                     }}
                   >
                     Edit
+                  </button>
+                </td>
+                <td>
+                  <button
+                    onClick={() => {
+                      setSelectedMember(member);
+                      setDeleteMemberModalOpen(true);
+                    }}
+                  >
+                    &times;
                   </button>
                 </td>
               </tr>
