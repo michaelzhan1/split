@@ -1,23 +1,23 @@
--- insert party and member
-WITH new_party AS (
-    INSERT INTO party (name)
-    VALUES ('Test party name')
-    RETURNING id AS party_id
-), new_member AS (
-    INSERT INTO member (party_id, name)
-    SELECT party_id, 'Test member name'
-    FROM new_party
-    RETURNING id AS member_id, party_id
+-- insert group and user
+WITH new_group AS (
+    INSERT INTO groups (name)
+    VALUES ('Test group name')
+    RETURNING id AS group_id
+), new_user AS (
+    INSERT INTO users (group_id, name)
+    SELECT group_id, 'Test user name'
+    FROM new_group
+    RETURNING id AS user_id, group_id
 ), new_payment AS (
-    INSERT INTO payment (party_id, amount, payer_id)
-    SELECT party_id, 100, member_id
-    FROM new_member
+    INSERT INTO payment (group_id, amount, payer_id)
+    SELECT group_id, 100, user_id
+    FROM new_user
     RETURNING id as payment_id
 )
-INSERT INTO member_payment (member_id, payment_id)
-SELECT nm.member_id, np.payment_id
-FROM new_member AS nm
+INSERT INTO users_payment (user_id, payment_id)
+SELECT nu.user_id, np.payment_id
+FROM new_user AS nu
 CROSS JOIN new_payment AS np;
 
-INSERT INTO party (name)
-VALUES ('Another test party name');
+INSERT INTO groups (name)
+VALUES ('Another test group name');
