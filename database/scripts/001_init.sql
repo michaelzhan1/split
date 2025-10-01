@@ -52,3 +52,5 @@ AFTER INSERT OR UPDATE ON payment
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
 EXECUTE FUNCTION check_payment_has_users();
+
+-- TODO: payees and payer have to be in the same group as the payment

@@ -30,7 +30,7 @@ func GetPaymentsByGroupID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger,
 	LEFT JOIN users_payment AS up
 		ON up.payment_id = p.id
 	LEFT JOIN users AS uu
-		ON up.users_id = uu.id
+		ON up.user_id = uu.id
 	WHERE p.group_id = @id
 	GROUP BY p.id, p.description, p.amount, u.name, u.id, u.balance`
 	args := pgx.StrictNamedArgs{
@@ -68,10 +68,10 @@ func GetPaymentByID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id in
 	FROM payment AS p
 	LEFT JOIN users AS u
 		ON p.payer_id = u.id
-	LEFT JOIN users_payment AS mp
-		ON mp.payment_id = p.id
+	LEFT JOIN users_payment AS up
+		ON up.payment_id = p.id
 	LEFT JOIN users AS uu
-		ON mp.users_id = uu.id
+		ON up.user_id = uu.id
 	WHERE p.id = @id
 	GROUP BY p.id, p.description, p.amount, u.name, u.id, u.balance`
 	args := pgx.StrictNamedArgs{
@@ -123,16 +123,16 @@ RETURNING id`
 		}
 
 		// insert junction
-		mpArgs := []any{}
-		mpValues := []string{}
+		upArgs := []any{}
+		upValues := []string{}
 		for _, payeeID := range body.PayeeIDs {
-			mpArgs = append(mpArgs, payeeID)
-			mpArgs = append(mpArgs, paymentID)
-			mpValues = append(mpValues, "($"+strconv.Itoa(len(mpArgs)-1)+", $"+strconv.Itoa(len(mpArgs))+")")
+			upArgs = append(upArgs, payeeID)
+			upArgs = append(upArgs, paymentID)
+			upValues = append(upValues, "($"+strconv.Itoa(len(upArgs)-1)+", $"+strconv.Itoa(len(upArgs))+")")
 		}
-		mpQuery := "INSERT INTO users_payment (user_id, payment_id) VALUES " + strings.Join(mpValues, ", ")
-		L.Info("AddPaymentByGroupId.users_payment", "query", mpQuery, "args", mpArgs)
-		cmdTag, err := tx.Exec(ctx, mpQuery, mpArgs...)
+		upQuery := "INSERT INTO users_payment (user_id, payment_id) VALUES " + strings.Join(upValues, ", ")
+		L.Info("AddPaymentByGroupId.users_payment", "query", upQuery, "args", upArgs)
+		cmdTag, err := tx.Exec(ctx, upQuery, upArgs...)
 		if err != nil {
 			L.Error(fmt.Sprintf("Insert failed: %v", err))
 			return 0, err

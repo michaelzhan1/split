@@ -16,7 +16,13 @@ export function PatchUserModal({
       isOpen={isOpen}
       onClose={onClose}
       title='Edit User'
-      onSubmit={() => onSubmit(user.id, name)}
+      onSubmit={() => {
+        if (name === '') {
+          alert('Name cannot be empty');
+          return;
+        }
+        onSubmit(user.id, name);
+      }}
     >
       <form>
         <label htmlFor='user-name-input'>Name</label>

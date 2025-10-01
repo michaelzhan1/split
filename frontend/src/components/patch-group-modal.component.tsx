@@ -16,7 +16,13 @@ export function PatchGroupModal({
       isOpen={isOpen}
       onClose={onClose}
       title='Edit Group'
-      onSubmit={() => onSubmit(name)}
+      onSubmit={() => {
+        if (name === '') {
+          alert('Name cannot be empty');
+          return;
+        }
+        onSubmit(name);
+      }}
     >
       <form>
         <label htmlFor='group-name-input'>Name</label>

@@ -152,8 +152,8 @@ func AddPayment(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 
 func PatchPayment(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	type request struct {
-		Amount      *float32    `json:"amount"`
-		Description *string `json:"description"`
+		Amount      *float32 `json:"amount"`
+		Description *string  `json:"description"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
