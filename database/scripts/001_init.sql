@@ -53,4 +53,43 @@ DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
 EXECUTE FUNCTION check_payment_has_users();
 
--- TODO: payees and payer have to be in the same group as the payment
+-- payees and payer have to be in the same group as the payment
+CREATE OR REPLACE FUNCTION check_payment_users_in_same_group()
+RETURNS TRIGGER AS 
+$$
+DECLARE
+    payer_group_id INTEGER;
+    payee_group_id INTEGER;
+BEGIN
+    -- check payer is in the same group as the payment
+    SELECT group_id INTO payer_group_id FROM users WHERE id = NEW.payer_id;
+
+    IF payer_group_id IS NULL THEN
+        RAISE EXCEPTION 'Payer % does not exist', NEW.payer_id;
+    END IF;
+
+    IF payer_group_id != NEW.group_id THEN
+        RAISE EXCEPTION 'Payer % is not in the same group as the payment (group %)', NEW.payer_id, NEW.group_id;
+    END IF;
+
+    -- check all associated payees are in the same group
+    FOR payee_group_id IN
+        SELECT u.group_id
+        FROM users_payment up
+        JOIN users u ON u.id = up.user_id
+        WHERE up.payment_id = NEW.id
+    LOOP
+        IF payee_group_id != NEW.group_id THEN
+            RAISE EXCEPTION 'One or more users in users_payment are not in the same group as the payment (group %)', NEW.group_id;
+        END IF;
+    END LOOP;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE CONSTRAINT TRIGGER ensure_payment_users_in_same_group
+AFTER INSERT OR UPDATE ON payment
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW
+EXECUTE FUNCTION check_payment_users_in_same_group()
