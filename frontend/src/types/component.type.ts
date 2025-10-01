@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Member } from 'src/types/common.type';
+import type { User } from 'src/types/common.type';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -9,7 +9,7 @@ export interface ModalProps {
   children: ReactNode;
 }
 
-export interface AddMemberModalProps {
+export interface AddUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (name: string) => void;
@@ -22,11 +22,11 @@ export interface PatchGroupModalProps {
   initialName: string;
 }
 
-export interface PatchMemberModalProps {
+export interface PatchUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (id: number, name: string) => void;
-  member: Member;
+  user: User;
 }
 
 export interface ConfirmationModalProps {

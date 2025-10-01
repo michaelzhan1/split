@@ -3,7 +3,7 @@ export interface Group {
   name: string;
 }
 
-export interface Member {
+export interface User {
   id: number;
   name: string;
   balance: number;

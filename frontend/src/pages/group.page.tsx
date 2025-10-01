@@ -4,10 +4,10 @@ import { useNavigate, useParams } from 'react-router';
 import { skipToken, useMutation, useQuery } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
-import { AddMemberModal } from 'src/components/add-member-modal.component';
+import { AddUserModal } from 'src/components/add-user-modal.component';
 import { ConfirmationModal } from 'src/components/confirmation-modal.component';
 import { PatchGroupModal } from 'src/components/patch-group-modal.component';
-import { PatchMemberModal } from 'src/components/patch-member-modal.component';
+import { PatchUserModal } from 'src/components/patch-user-modal.component';
 import {
   deleteGroup,
   getGroupById,
@@ -18,8 +18,8 @@ import {
   deleteUser,
   getUsersByGroupId,
   patchUser,
-} from 'src/services/member.service';
-import type { Group, Member } from 'src/types/common.type';
+} from 'src/services/user.service';
+import type { Group, User } from 'src/types/common.type';
 
 export function Group() {
   const { groupId = '' } = useParams();
@@ -28,13 +28,13 @@ export function Group() {
     useState<boolean>(false);
   const [deleteGroupModalOpen, setDeleteGroupModalOpen] =
     useState<boolean>(false);
-  const [addMemberModalOpen, setAddMemberModalOpen] = useState<boolean>(false);
-  const [patchMemberModalOpen, setPatchMemberModalOpen] =
+  const [addUserModalOpen, setAddUserModalOpen] = useState<boolean>(false);
+  const [patchUserModalOpen, setPatchUserModalOpen] =
     useState<boolean>(false);
-  const [deleteMemberModalOpen, setDeleteMemberModalOpen] =
+  const [deleteUserModalOpen, setDeleteUserModalOpen] =
     useState<boolean>(false);
 
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   // group info
   const {
@@ -95,88 +95,88 @@ export function Group() {
       },
     });
 
-  // member info
+  // user info
   const {
-    data: members = [],
-    isFetching: isFetchingMembers,
-    refetch: refetchMembers,
-    error: membersError,
-  } = useQuery<Member[], AxiosError>({
-    queryKey: ['members', groupId],
+    data: users = [],
+    isFetching: isFetchingUsers,
+    refetch: refetchUsers,
+    error: usersError,
+  } = useQuery<User[], AxiosError>({
+    queryKey: ['users', groupId],
     queryFn: group ? () => getUsersByGroupId(group.id) : skipToken,
   });
 
   useEffect(() => {
-    if (membersError) {
-      console.error('Error fetching members:', membersError);
-      alert('Failed to fetch members. Please try again.');
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      alert('Failed to fetch users. Please try again.');
     }
-  }, [membersError]);
+  }, [usersError]);
 
-  // add a member
-  const { mutate: addMemberMutate, isPending: isPendingAddMember } =
+  // add a user
+  const { mutate: addUserMutate, isPending: isPendingAddUser } =
     useMutation<{ id: number }, AxiosError, { name: string }>({
       mutationFn: (variables: { name: string }) => {
         return addUserToGroup(Number(groupId), variables.name);
       },
     });
-  const onAddMember = (name: string) =>
-    addMemberMutate(
+  const onAddUser = (name: string) =>
+    addUserMutate(
       { name },
       {
         onSuccess: () => {
-          refetchMembers();
-          setAddMemberModalOpen(false);
+          refetchUsers();
+          setAddUserModalOpen(false);
         },
         onError: (error) => {
-          console.error('Error adding member:', error);
-          alert('Failed to add member. Please try again');
+          console.error('Error adding user:', error);
+          alert('Failed to add user. Please try again');
         },
       },
     );
 
-  // patch a member
-  const { mutate: patchMemberMutate, isPending: isPendingPatchMember } =
-    useMutation<void, AxiosError, { memberId: number; name: string }>({
-      mutationFn: (variables: { memberId: number; name: string }) => {
-        return patchUser(Number(groupId), variables.memberId, variables.name);
+  // patch a user
+  const { mutate: patchUserMutate, isPending: isPendingPatchUser } =
+    useMutation<void, AxiosError, { userId: number; name: string }>({
+      mutationFn: (variables: { userId: number; name: string }) => {
+        return patchUser(Number(groupId), variables.userId, variables.name);
       },
     });
-  const onPatchMember = (memberId: number, name: string) =>
-    patchMemberMutate(
-      { memberId, name },
+  const onPatchUser = (userId: number, name: string) =>
+    patchUserMutate(
+      { userId: userId, name },
       {
         onSuccess: () => {
-          refetchMembers();
-          setPatchMemberModalOpen(false);
-          setSelectedMember(null);
+          refetchUsers();
+          setPatchUserModalOpen(false);
+          setSelectedUser(null);
         },
         onError: (error) => {
-          console.error('Error updating member:', error);
-          alert('Failed to update member. Please try again');
+          console.error('Error updating user:', error);
+          alert('Failed to update user. Please try again');
         },
       },
     );
 
-  // delete a member
-  const { mutate: deleteMemberMutate, isPending: isPendingDeleteMember } =
-    useMutation<void, AxiosError, { memberId: number }>({
-      mutationFn: (variables: { memberId: number }) => {
-        return deleteUser(Number(groupId), variables.memberId);
+  // delete a user
+  const { mutate: deleteUserMutate, isPending: isPendingDeleteUser } =
+    useMutation<void, AxiosError, { userId: number }>({
+      mutationFn: (variables: { userId: number }) => {
+        return deleteUser(Number(groupId), variables.userId);
       },
     });
-  const onDeleteMember = (memberId: number) =>
-    deleteMemberMutate(
-      { memberId },
+  const onDeleteUser = (userId: number) =>
+    deleteUserMutate(
+      { userId: userId },
       {
         onSuccess: () => {
-          refetchMembers();
-          setPatchMemberModalOpen(false);
-          setSelectedMember(null);
+          refetchUsers();
+          setPatchUserModalOpen(false);
+          setSelectedUser(null);
         },
         onError: (error) => {
-          console.error('Error deleting member:', error);
-          alert('Failed to delete member. Please try again');
+          console.error('Error deleting user:', error);
+          alert('Failed to delete user. Please try again');
         },
       },
     );
@@ -185,10 +185,10 @@ export function Group() {
     isFetchingGroup ||
     isPendingPatchGroup ||
     isPendingDeleteGroup ||
-    isFetchingMembers ||
-    isPendingAddMember ||
-    isPendingPatchMember ||
-    isPendingDeleteMember;
+    isFetchingUsers ||
+    isPendingAddUser ||
+    isPendingPatchUser ||
+    isPendingDeleteUser;
 
   return !group || isLoading ? (
     <div>Loading...</div>
@@ -210,30 +210,30 @@ export function Group() {
           setDeleteGroupModalOpen(false);
         }}
       />
-      <AddMemberModal
-        isOpen={addMemberModalOpen}
-        onClose={() => setAddMemberModalOpen(false)}
-        onSubmit={(name: string) => onAddMember(name)}
+      <AddUserModal
+        isOpen={addUserModalOpen}
+        onClose={() => setAddUserModalOpen(false)}
+        onSubmit={(name: string) => onAddUser(name)}
       />
 
-      {selectedMember && (
+      {selectedUser && (
         <>
-          <PatchMemberModal
-            isOpen={patchMemberModalOpen}
-            onClose={() => setPatchMemberModalOpen(false)}
-            onSubmit={(memberId: number, name: string) =>
-              onPatchMember(memberId, name)
+          <PatchUserModal
+            isOpen={patchUserModalOpen}
+            onClose={() => setPatchUserModalOpen(false)}
+            onSubmit={(userId: number, name: string) =>
+              onPatchUser(userId, name)
             }
-            member={selectedMember}
+            user={selectedUser}
           />
           <ConfirmationModal
-            isOpen={deleteMemberModalOpen}
-            onClose={() => setDeleteMemberModalOpen(false)}
-            title='Delete Member'
-            content={`Are you sure you want to delete member "${selectedMember.name}"? This action cannot be undone.`}
+            isOpen={deleteUserModalOpen}
+            onClose={() => setDeleteUserModalOpen(false)}
+            title='Delete User'
+            content={`Are you sure you want to delete user "${selectedUser.name}"? This action cannot be undone.`}
             onSubmit={() => {
-              onDeleteMember(selectedMember.id);
-              setDeleteMemberModalOpen(false);
+              onDeleteUser(selectedUser.id);
+              setDeleteUserModalOpen(false);
             }}
           />
         </>
@@ -248,7 +248,7 @@ export function Group() {
         </button>
       </div>
       <div>
-        <button onClick={() => setAddMemberModalOpen(true)}>Add member</button>
+        <button onClick={() => setAddUserModalOpen(true)}>Add user</button>
       </div>
       <div>
         <table>
@@ -259,15 +259,15 @@ export function Group() {
             </tr>
           </thead>
           <tbody>
-            {members.map((member) => (
-              <tr key={member.id}>
-                <td>{member.name}</td>
-                <td>{member.balance}</td>
+            {users.map((user) => (
+              <tr key={user.id}>
+                <td>{user.name}</td>
+                <td>{user.balance}</td>
                 <td>
                   <button
                     onClick={() => {
-                      setSelectedMember(member);
-                      setPatchMemberModalOpen(true);
+                      setSelectedUser(user);
+                      setPatchUserModalOpen(true);
                     }}
                   >
                     Edit
@@ -276,8 +276,8 @@ export function Group() {
                 <td>
                   <button
                     onClick={() => {
-                      setSelectedMember(member);
-                      setDeleteMemberModalOpen(true);
+                      setSelectedUser(user);
+                      setDeleteUserModalOpen(true);
                     }}
                   >
                     &times;

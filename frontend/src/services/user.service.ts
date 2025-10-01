@@ -1,10 +1,10 @@
 import axios, { type AxiosResponse } from 'axios';
 
-import type { Member } from 'src/types/common.type';
+import type { User } from 'src/types/common.type';
 
-export async function getUsersByGroupId(id: number): Promise<Member[]> {
+export async function getUsersByGroupId(id: number): Promise<User[]> {
   return axios
-    .get<Member[]>(`${import.meta.env.VITE_API_PREFIX}/groups/${id}/users`)
+    .get<User[]>(`${import.meta.env.VITE_API_PREFIX}/groups/${id}/users`)
     .then((res) => res.data);
 }
 
@@ -22,20 +22,20 @@ export async function addUserToGroup(
 }
 
 export async function patchUser(
-  partyId: number,
+  groupId: number,
   id: number,
   name: string,
 ): Promise<void> {
   await axios.patch<void, AxiosResponse, { name: string }>(
-    `${import.meta.env.VITE_API_PREFIX}/groups/${partyId}/users/${id}`,
+    `${import.meta.env.VITE_API_PREFIX}/groups/${groupId}/users/${id}`,
     {
       name,
     },
   );
 }
 
-export async function deleteUser(partyId: number, id: number): Promise<void> {
+export async function deleteUser(groupId: number, id: number): Promise<void> {
   await axios.delete<void, AxiosResponse, { name: string }>(
-    `${import.meta.env.VITE_API_PREFIX}/groups/${partyId}/users/${id}`,
+    `${import.meta.env.VITE_API_PREFIX}/groups/${groupId}/users/${id}`,
   );
 }
