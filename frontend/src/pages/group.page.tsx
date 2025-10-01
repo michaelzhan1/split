@@ -10,10 +10,10 @@ import { PatchGroupModal } from 'src/components/patch-group-modal.component';
 import { PatchMemberModal } from 'src/components/patch-member-modal.component';
 import { getGroupById, patchGroup } from 'src/services/group.service';
 import {
-  addMembertoGroup,
-  deleteMember,
-  getMembersByGroupId,
-  patchMember,
+  addUserToGroup,
+  deleteUser,
+  getUsersByGroupId,
+  patchUser,
 } from 'src/services/member.service';
 import type { Group, Member } from 'src/types/common.type';
 
@@ -79,7 +79,7 @@ export function Group() {
     error: membersError,
   } = useQuery<Member[], AxiosError>({
     queryKey: ['members', groupId],
-    queryFn: group ? () => getMembersByGroupId(group.id) : skipToken,
+    queryFn: group ? () => getUsersByGroupId(group.id) : skipToken,
   });
 
   useEffect(() => {
@@ -93,7 +93,7 @@ export function Group() {
   const { mutate: addMemberMutate, isPending: isPendingAddMember } =
     useMutation<{ id: number }, AxiosError, { name: string }>({
       mutationFn: (variables: { name: string }) => {
-        return addMembertoGroup(Number(groupId), variables.name);
+        return addUserToGroup(Number(groupId), variables.name);
       },
     });
   const onAddMember = (name: string) =>
@@ -115,7 +115,7 @@ export function Group() {
   const { mutate: patchMemberMutate, isPending: isPendingPatchMember } =
     useMutation<void, AxiosError, { memberId: number; name: string }>({
       mutationFn: (variables: { memberId: number; name: string }) => {
-        return patchMember(Number(groupId), variables.memberId, variables.name);
+        return patchUser(Number(groupId), variables.memberId, variables.name);
       },
     });
   const onPatchMember = (memberId: number, name: string) =>
@@ -138,7 +138,7 @@ export function Group() {
   const { mutate: deleteMemberMutate, isPending: isPendingDeleteMember } =
     useMutation<void, AxiosError, { memberId: number }>({
       mutationFn: (variables: { memberId: number }) => {
-        return deleteMember(Number(groupId), variables.memberId);
+        return deleteUser(Number(groupId), variables.memberId);
       },
     });
   const onDeleteMember = (memberId: number) =>

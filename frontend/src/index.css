@@ -4,4 +4,8 @@
 
 body {
   font-family: 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', sans-serif;
+
+  /* temp dark mode */
+  background-color: black;
+  color: white;
 }
