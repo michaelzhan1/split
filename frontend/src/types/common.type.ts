@@ -8,3 +8,30 @@ export interface User {
   name: string;
   balance: number;
 }
+
+export interface Payment {
+  id: number;
+  description: string | null;
+  amount: number;
+  payer: User;
+  payees: User[];
+}
+
+export interface Owe {
+  from: number;
+  to: number;
+  amount: number;
+}
+
+export interface CreatePaymentRequest {
+  description: string | null;
+  amount: number;
+  payer_id: number;
+  payee_ids: number[];
+}
+
+export interface PatchPaymentRequest {
+  id: number;
+  amount: number | null;
+  description: string | null;
+}

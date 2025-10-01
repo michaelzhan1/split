@@ -2,14 +2,14 @@ import axios, { type AxiosResponse } from 'axios';
 
 import type { User } from 'src/types/common.type';
 
-export async function getUsersByGroupId(id: number): Promise<User[]> {
+export async function getUsersByGroupId(groupId: number): Promise<User[]> {
   return axios
-    .get<User[]>(`${import.meta.env.VITE_API_PREFIX}/groups/${id}/users`)
+    .get<User[]>(`${import.meta.env.VITE_API_PREFIX}/groups/${groupId}/users`)
     .then((res) => res.data);
 }
 
 export async function addUserToGroup(
-  id: number,
+  groupId: number,
   name: string,
 ): Promise<{ id: number }> {
   return axios
@@ -17,7 +17,7 @@ export async function addUserToGroup(
       { id: number },
       AxiosResponse,
       { name: string }
-    >(`${import.meta.env.VITE_API_PREFIX}/groups/${id}/users`, { name })
+    >(`${import.meta.env.VITE_API_PREFIX}/groups/${groupId}/users`, { name })
     .then((res) => res.data);
 }
 
@@ -28,9 +28,7 @@ export async function patchUser(
 ): Promise<void> {
   await axios.patch<void, AxiosResponse, { name: string }>(
     `${import.meta.env.VITE_API_PREFIX}/groups/${groupId}/users/${id}`,
-    {
-      name,
-    },
+    { name },
   );
 }
 
