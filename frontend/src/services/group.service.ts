@@ -26,3 +26,9 @@ export async function patchGroup(id: number, name: string): Promise<void> {
     },
   );
 }
+
+export async function deleteGroup(id: number): Promise<void> {
+  await axios.delete<void, AxiosResponse>(
+    `${import.meta.env.VITE_API_PREFIX}/groups/${id}`,
+  );
+}

@@ -8,7 +8,11 @@ import { AddMemberModal } from 'src/components/add-member-modal.component';
 import { ConfirmationModal } from 'src/components/confirmation-modal.component';
 import { PatchGroupModal } from 'src/components/patch-group-modal.component';
 import { PatchMemberModal } from 'src/components/patch-member-modal.component';
-import { getGroupById, patchGroup } from 'src/services/group.service';
+import {
+  deleteGroup,
+  getGroupById,
+  patchGroup,
+} from 'src/services/group.service';
 import {
   addUserToGroup,
   deleteUser,
@@ -21,6 +25,8 @@ export function Group() {
   const { groupId = '' } = useParams();
   const navigate = useNavigate();
   const [patchGroupModalOpen, setPatchGroupModalOpen] =
+    useState<boolean>(false);
+  const [deleteGroupModalOpen, setDeleteGroupModalOpen] =
     useState<boolean>(false);
   const [addMemberModalOpen, setAddMemberModalOpen] = useState<boolean>(false);
   const [patchMemberModalOpen, setPatchMemberModalOpen] =
@@ -70,6 +76,24 @@ export function Group() {
         },
       },
     );
+
+  // delete group
+  const { mutate: deleteGroupMutate, isPending: isPendingDeleteGroup } =
+    useMutation<void, AxiosError>({
+      mutationFn: () => {
+        return deleteGroup(Number(groupId));
+      },
+    });
+  const onDeleteGroup = () =>
+    deleteGroupMutate(undefined, {
+      onSuccess: () => {
+        navigate('/');
+      },
+      onError: (error) => {
+        console.error('Error deleting group:', error);
+        alert('Failed to delete group. Please try again');
+      },
+    });
 
   // member info
   const {
@@ -160,6 +184,7 @@ export function Group() {
   const isLoading =
     isFetchingGroup ||
     isPendingPatchGroup ||
+    isPendingDeleteGroup ||
     isFetchingMembers ||
     isPendingAddMember ||
     isPendingPatchMember ||
@@ -174,6 +199,16 @@ export function Group() {
         onClose={() => setPatchGroupModalOpen(false)}
         onSubmit={(name: string) => onPatchGroup(name)}
         initialName={group.name}
+      />
+      <ConfirmationModal
+        isOpen={deleteGroupModalOpen}
+        onClose={() => setDeleteGroupModalOpen(false)}
+        title='Delete Group'
+        content='Are you sure you want to delete this group? This action cannot be undone.'
+        onSubmit={() => {
+          onDeleteGroup();
+          setDeleteGroupModalOpen(false);
+        }}
       />
       <AddMemberModal
         isOpen={addMemberModalOpen}
@@ -207,6 +242,9 @@ export function Group() {
         <h1>Group: {group.name}</h1>
         <button onClick={() => setPatchGroupModalOpen(true)}>
           Edit group name
+        </button>
+        <button onClick={() => setDeleteGroupModalOpen(true)}>
+          Delete group
         </button>
       </div>
       <div>
