@@ -95,7 +95,7 @@ func GetPaymentByID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id in
 }
 
 type InsertPayment struct {
-	Description *string `json:"description"`
+	Description string `json:"description"`
 	Amount      float32 `json:"amount"`
 	PayerID     int     `json:"payer_id"`
 	PayeeIDs    []int   `json:"payee_ids"`

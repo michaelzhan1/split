@@ -233,6 +233,13 @@ func PatchPayment(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			}
 			return
 		}
+		if body.Description != nil && *body.Description == "" {
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Invalid description field",
+			}
+			return
+		}
 
 		err = database.PatchPayment(ctx, db, L, payment, body.Amount, body.Description)
 		if err != nil {

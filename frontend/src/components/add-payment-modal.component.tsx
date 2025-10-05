@@ -19,6 +19,10 @@ export function AddPaymentModal({
       onClose={onClose}
       title='Add Payment'
       onSubmit={() => {
+        if (description.trim() === '') {
+          alert('Description cannot be empty');
+          return;
+        }
         if (payerId === null) {
           alert('Payer must be selected');
           return;

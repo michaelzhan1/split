@@ -11,7 +11,7 @@ export interface User {
 
 export interface Payment {
   id: number;
-  description: string | null;
+  description: string;
   amount: number;
   payer: User;
   payees: User[];
@@ -24,7 +24,7 @@ export interface Owe {
 }
 
 export interface CreatePaymentRequest {
-  description: string | null;
+  description: string;
   amount: number;
   payer_id: number;
   payee_ids: number[];
