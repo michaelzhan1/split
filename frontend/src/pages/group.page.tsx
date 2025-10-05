@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router';
 import { skipToken, useMutation, useQuery } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
+import { AddPaymentModal } from 'src/components/add-payment-modal.component';
 import { AddUserModal } from 'src/components/add-user-modal.component';
 import { ConfirmationModal } from 'src/components/confirmation-modal.component';
 import { PatchGroupModal } from 'src/components/patch-group-modal.component';
@@ -14,27 +15,43 @@ import {
   patchGroup,
 } from 'src/services/group.service';
 import {
+  addPaymentToGroup,
+  getPaymentsByGroupId,
+} from 'src/services/payment.service';
+import {
   addUserToGroup,
   deleteUser,
   getUsersByGroupId,
   patchUser,
 } from 'src/services/user.service';
-import type { Group, User } from 'src/types/common.type';
+import type {
+  CreatePaymentRequest,
+  Group,
+  Payment,
+  User,
+} from 'src/types/common.type';
 
 export function Group() {
   const { groupId = '' } = useParams();
   const navigate = useNavigate();
+
+  // group states
   const [patchGroupModalOpen, setPatchGroupModalOpen] =
     useState<boolean>(false);
   const [deleteGroupModalOpen, setDeleteGroupModalOpen] =
     useState<boolean>(false);
+
+  // user states
   const [addUserModalOpen, setAddUserModalOpen] = useState<boolean>(false);
-  const [patchUserModalOpen, setPatchUserModalOpen] =
-    useState<boolean>(false);
+  const [patchUserModalOpen, setPatchUserModalOpen] = useState<boolean>(false);
   const [deleteUserModalOpen, setDeleteUserModalOpen] =
     useState<boolean>(false);
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  // payment states
+  const [addPaymentModalOpen, setAddPaymentModalOpen] =
+    useState<boolean>(false);
 
   // group info
   const {
@@ -114,12 +131,15 @@ export function Group() {
   }, [usersError]);
 
   // add a user
-  const { mutate: addUserMutate, isPending: isPendingAddUser } =
-    useMutation<{ id: number }, AxiosError, { name: string }>({
-      mutationFn: (variables: { name: string }) => {
-        return addUserToGroup(Number(groupId), variables.name);
-      },
-    });
+  const { mutate: addUserMutate, isPending: isPendingAddUser } = useMutation<
+    { id: number },
+    AxiosError,
+    { name: string }
+  >({
+    mutationFn: (variables: { name: string }) => {
+      return addUserToGroup(Number(groupId), variables.name);
+    },
+  });
   const onAddUser = (name: string) =>
     addUserMutate(
       { name },
@@ -171,12 +191,53 @@ export function Group() {
       {
         onSuccess: () => {
           refetchUsers();
-          setPatchUserModalOpen(false);
+          setDeleteUserModalOpen(false);
           setSelectedUser(null);
         },
         onError: (error) => {
           console.error('Error deleting user:', error);
           alert('Failed to delete user. Please try again');
+        },
+      },
+    );
+
+  // get payments info
+  const {
+    data: payments = [],
+    isFetching: isFetchingPayments,
+    refetch: refetchPayments,
+    error: paymentsError,
+  } = useQuery<Payment[], AxiosError>({
+    queryKey: ['payments', groupId],
+    queryFn: group ? () => getPaymentsByGroupId(group.id) : skipToken,
+  });
+
+  useEffect(() => {
+    if (paymentsError) {
+      console.error('Error fetching payments:', paymentsError);
+      alert('Failed to fetch payments. Please try again.');
+    }
+  }, [paymentsError]);
+
+  // add a payment
+  const { mutate: addPaymentMutate, isPending: isPendingAddPayment } =
+    useMutation<{ id: number }, AxiosError, { data: CreatePaymentRequest }>({
+      mutationFn: (variables: { data: CreatePaymentRequest }) => {
+        return addPaymentToGroup(Number(groupId), variables.data);
+      },
+    });
+  const onAddPayment = (data: CreatePaymentRequest) =>
+    addPaymentMutate(
+      { data },
+      {
+        onSuccess: () => {
+          refetchPayments();
+          refetchUsers();
+          setAddPaymentModalOpen(false);
+        },
+        onError: (error) => {
+          console.error('Error adding payment:', error);
+          alert('Failed to add payment. Please try again');
         },
       },
     );
@@ -188,7 +249,9 @@ export function Group() {
     isFetchingUsers ||
     isPendingAddUser ||
     isPendingPatchUser ||
-    isPendingDeleteUser;
+    isPendingDeleteUser ||
+    isFetchingPayments ||
+    isPendingAddPayment;
 
   return !group || isLoading ? (
     <div>Loading...</div>
@@ -197,7 +260,7 @@ export function Group() {
       <PatchGroupModal
         isOpen={patchGroupModalOpen}
         onClose={() => setPatchGroupModalOpen(false)}
-        onSubmit={(name: string) => onPatchGroup(name)}
+        onSubmit={onPatchGroup}
         initialName={group.name}
       />
       <ConfirmationModal
@@ -205,15 +268,12 @@ export function Group() {
         onClose={() => setDeleteGroupModalOpen(false)}
         title='Delete Group'
         content='Are you sure you want to delete this group? This action cannot be undone.'
-        onSubmit={() => {
-          onDeleteGroup();
-          setDeleteGroupModalOpen(false);
-        }}
+        onSubmit={onDeleteGroup}
       />
       <AddUserModal
         isOpen={addUserModalOpen}
         onClose={() => setAddUserModalOpen(false)}
-        onSubmit={(name: string) => onAddUser(name)}
+        onSubmit={onAddUser}
       />
 
       {selectedUser && (
@@ -221,9 +281,7 @@ export function Group() {
           <PatchUserModal
             isOpen={patchUserModalOpen}
             onClose={() => setPatchUserModalOpen(false)}
-            onSubmit={(userId: number, name: string) =>
-              onPatchUser(userId, name)
-            }
+            onSubmit={onPatchUser}
             user={selectedUser}
           />
           <ConfirmationModal
@@ -233,11 +291,15 @@ export function Group() {
             content={`Are you sure you want to delete user "${selectedUser.name}"? This action cannot be undone.`}
             onSubmit={() => {
               onDeleteUser(selectedUser.id);
-              setDeleteUserModalOpen(false);
             }}
           />
         </>
       )}
+      <AddPaymentModal
+        isOpen={addPaymentModalOpen}
+        onClose={() => setAddPaymentModalOpen(false)}
+        onSubmit={onAddPayment}
+      />
       <div>
         <h1>Group: {group.name}</h1>
         <button onClick={() => setPatchGroupModalOpen(true)}>
@@ -254,6 +316,7 @@ export function Group() {
         <table>
           <thead>
             <tr>
+              <th>ID</th>
               <th>Name</th>
               <th>Balance</th>
             </tr>
@@ -261,6 +324,7 @@ export function Group() {
           <tbody>
             {users.map((user) => (
               <tr key={user.id}>
+                <td>{user.id}</td>
                 <td>{user.name}</td>
                 <td>{user.balance}</td>
                 <td>
@@ -283,6 +347,31 @@ export function Group() {
                     &times;
                   </button>
                 </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <button onClick={() => setAddPaymentModalOpen(true)}>Add payment</button>
+      </div>
+      <div>
+        <table>
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Payer</th>
+              <th>Payees</th>
+            </tr>
+          </thead>
+          <tbody>
+            {payments.map((payment) => (
+              <tr key={payment.id}>
+                <td>{payment.description}</td>
+                <td>{payment.amount}</td>
+                <td>{payment.payer.name}</td>
+                <td>{payment.payees.map((p) => p.name).join(', ')}</td>
               </tr>
             ))}
           </tbody>

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { User } from 'src/types/common.type';
+import type { CreatePaymentRequest, User } from 'src/types/common.type';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -27,6 +27,12 @@ export interface PatchUserModalProps {
   onClose: () => void;
   onSubmit: (id: number, name: string) => void;
   user: User;
+}
+
+export interface AddPaymentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: CreatePaymentRequest) => void;
 }
 
 export interface ConfirmationModalProps {
