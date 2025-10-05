@@ -299,6 +299,7 @@ export function Group() {
         isOpen={addPaymentModalOpen}
         onClose={() => setAddPaymentModalOpen(false)}
         onSubmit={onAddPayment}
+        users={users}
       />
       <div>
         <h1>Group: {group.name}</h1>

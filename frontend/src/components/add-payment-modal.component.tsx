@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Dropdown } from 'src/components/common/dropdown.component';
 
 import { Modal } from 'src/components/common/modal.component';
 import type { AddPaymentModalProps } from 'src/types/component.type';
@@ -7,6 +8,7 @@ export function AddPaymentModal({
   isOpen,
   onClose,
   onSubmit,
+  users,
 }: AddPaymentModalProps) {
   const [description, setDescription] = useState<string>('');
   const [amountStr, setAmountStr] = useState<string>('');
@@ -57,12 +59,17 @@ export function AddPaymentModal({
           onChange={(e) => setAmountStr(e.target.value.replace(/\D/g, ''))}
         />
         <label htmlFor='payment-payer-id-input'>Payer ID</label>
-        <input
+        <Dropdown
+          options={users.map((user) => ({ label: user.name, value: user.id.toString() }))}
+          selectedValue={payerId?.toString() ?? ''}
+          onSelect={(value) => setPlayerId(Number(value))}
+        />
+        {/* <input
           id='payment-payer-id-input'
           type='number'
           value={payerId ?? ''}
           onChange={(e) => setPlayerId(Number(e.target.value))}
-        />
+        /> */}
         <label htmlFor='payment-payee-ids-input'>
           Payee IDs (comma separated)
         </label>
