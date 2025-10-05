@@ -20,7 +20,7 @@ CREATE TABLE payment (
     id SERIAL PRIMARY KEY,
     group_id INTEGER REFERENCES groups (id)
         ON DELETE CASCADE,
-    description TEXT,
+    description TEXT NOT NULL,
     amount NUMERIC NOT NULL CHECK (amount > 0),
     payer_id INTEGER REFERENCES users (id)
         ON DELETE RESTRICT
