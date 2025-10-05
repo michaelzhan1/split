@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Dropdown } from 'src/components/common/dropdown.component';
 
+import { Dropdown } from 'src/components/common/dropdown.component';
 import { Modal } from 'src/components/common/modal.component';
+import { MultiSelect } from 'src/components/common/multiselect.component';
 import type { AddPaymentModalProps } from 'src/types/component.type';
 
 export function AddPaymentModal({
@@ -12,8 +13,8 @@ export function AddPaymentModal({
 }: AddPaymentModalProps) {
   const [description, setDescription] = useState<string>('');
   const [amountStr, setAmountStr] = useState<string>('');
-  const [payerId, setPlayerId] = useState<number | null>(null);
-  const [payeeIds, setPayeeIds] = useState<number[]>([]);
+  const [payerId, setPlayerId] = useState<string>('');
+  const [payeeIds, setPayeeIds] = useState<string[]>([]);
 
   return (
     <Modal
@@ -25,14 +26,20 @@ export function AddPaymentModal({
           alert('Description cannot be empty');
           return;
         }
-        if (payerId === null) {
-          alert('Payer must be selected');
+        if (isNaN(Number(payerId)) || Number(payerId) <= 0) {
+          alert('Invalid payer ID');
           return;
         }
         if (payeeIds.length === 0) {
           alert('At least one payee must be selected');
           return;
         }
+        payeeIds.forEach((id) => {
+          if (isNaN(Number(id)) || Number(id) <= 0) {
+            alert(`Invalid payee ID: ${id}`);
+            return;
+          }
+        });
         if (isNaN(Number(amountStr)) || Number(amountStr) <= 0) {
           alert('Invalid amount');
           return;
@@ -40,8 +47,8 @@ export function AddPaymentModal({
         onSubmit({
           description,
           amount: Number(amountStr),
-          payer_id: payerId,
-          payee_ids: payeeIds,
+          payer_id: Number(payerId),
+          payee_ids: payeeIds.map((id) => Number(id)),
         });
       }}
     >
@@ -60,30 +67,25 @@ export function AddPaymentModal({
         />
         <label htmlFor='payment-payer-id-input'>Payer ID</label>
         <Dropdown
-          options={users.map((user) => ({ label: user.name, value: user.id.toString() }))}
-          selectedValue={payerId?.toString() ?? ''}
-          onSelect={(value) => setPlayerId(Number(value))}
-        />
-        {/* <input
           id='payment-payer-id-input'
-          type='number'
-          value={payerId ?? ''}
-          onChange={(e) => setPlayerId(Number(e.target.value))}
-        /> */}
+          options={users.map((user) => ({
+            label: user.name,
+            value: user.id.toString(),
+          }))}
+          selectedValue={payerId?.toString() ?? ''}
+          onSelect={(value) => setPlayerId(value)}
+        />
         <label htmlFor='payment-payee-ids-input'>
           Payee IDs (comma separated)
         </label>
-        <input
+        <MultiSelect
           id='payment-payee-ids-input'
-          value={payeeIds.join(',')}
-          onChange={(e) =>
-            setPayeeIds(
-              e.target.value
-                .split(',')
-                .map((id) => Number(id.trim()))
-                .filter((id) => !isNaN(id)),
-            )
-          }
+          options={users.map((user) => ({
+            label: user.name,
+            value: user.id.toString(),
+          }))}
+          selectedValues={payeeIds}
+          onChange={(values: string[]) => setPayeeIds(values)}
         />
       </form>
     </Modal>

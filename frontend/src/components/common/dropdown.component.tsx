@@ -4,7 +4,12 @@ import type { DropdownProps } from 'src/types/component.type';
 
 import 'src/components/common/dropdown.component.css';
 
-export function Dropdown({ options, selectedValue, onSelect }: DropdownProps) {
+export function Dropdown({
+  id,
+  options,
+  selectedValue,
+  onSelect,
+}: DropdownProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -26,6 +31,7 @@ export function Dropdown({ options, selectedValue, onSelect }: DropdownProps) {
   return (
     <div ref={containerRef} className='dropdown-container'>
       <input
+        id={id}
         className='dropdown-input'
         value={selectedValue}
         readOnly

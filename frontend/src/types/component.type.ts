@@ -7,12 +7,14 @@ interface DropdownOption {
 }
 
 export interface DropdownProps {
+  id: string;
   options: DropdownOption[];
   selectedValue: string;
   onSelect: (value: string) => void;
 }
 
 export interface MultiSelectProps {
+  id: string;
   options: DropdownOption[];
   selectedValues: string[];
   onChange: (values: string[]) => void;
