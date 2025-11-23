@@ -65,7 +65,7 @@ export function AddPaymentModal({
           value={amountStr ?? ''}
           onChange={(e) => setAmountStr(e.target.value.replace(/\D/g, ''))}
         />
-        <label htmlFor='payment-payer-id-input'>Payer ID</label>
+        <label htmlFor='payment-payer-id-input'>Payer</label>
         <Dropdown
           id='payment-payer-id-input'
           options={users.map((user) => ({
@@ -76,7 +76,7 @@ export function AddPaymentModal({
           onSelect={(value) => setPlayerId(value)}
         />
         <label htmlFor='payment-payee-ids-input'>
-          Payee IDs (comma separated)
+          Payees (comma separated)
         </label>
         <MultiSelect
           id='payment-payee-ids-input'

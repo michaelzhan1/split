@@ -33,7 +33,7 @@ export function Dropdown({
       <input
         id={id}
         className='dropdown-input'
-        value={selectedValue}
+        value={selectedValue.length === 0 ? '' : options.find((o) => o.value === selectedValue)?.label || ''}
         readOnly
         onClick={() => setIsOpen(!isOpen)}
       />

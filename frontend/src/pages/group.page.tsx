@@ -17,6 +17,7 @@ import {
 import {
   addPaymentToGroup,
   getPaymentsByGroupId,
+  patchPayment,
 } from 'src/services/payment.service';
 import {
   addUserToGroup,
@@ -27,9 +28,11 @@ import {
 import type {
   CreatePaymentRequest,
   Group,
+  PatchPaymentRequest,
   Payment,
   User,
 } from 'src/types/common.type';
+import { PatchPaymentModal } from 'src/components/patch-payment-modal.component';
 
 export function Group() {
   const { groupId = '' } = useParams();
@@ -52,6 +55,11 @@ export function Group() {
   // payment states
   const [addPaymentModalOpen, setAddPaymentModalOpen] =
     useState<boolean>(false);
+  const [patchPaymentModalOpen, setPatchPaymentModalOpen] = useState<boolean>(false);
+
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(
+    null,
+  );
 
   // group info
   const {
@@ -241,6 +249,30 @@ export function Group() {
         },
       },
     );
+  
+  // patch a payment
+  const { mutate: patchPaymentMutate, isPending: isPendingPatchPayment } =
+    useMutation<void, AxiosError, { paymentId: number; data: PatchPaymentRequest }>({
+      mutationFn: (variables: { paymentId: number; data: PatchPaymentRequest }) => {
+        return patchPayment(Number(groupId), variables.paymentId, variables.data);
+      },
+    });
+  const onPatchPayment = (paymentId: number, data: PatchPaymentRequest) =>
+    patchPaymentMutate(
+      { paymentId, data },
+      {
+        onSuccess: () => {
+          refetchPayments();
+          refetchUsers();
+          setPatchPaymentModalOpen(false);
+          setSelectedPayment(null);
+        },
+        onError: (error) => {
+          console.error('Error updating payment:', error);
+          alert('Failed to update payment. Please try again');
+        },
+      },
+    );
 
   const isLoading =
     isFetchingGroup ||
@@ -251,7 +283,8 @@ export function Group() {
     isPendingPatchUser ||
     isPendingDeleteUser ||
     isFetchingPayments ||
-    isPendingAddPayment;
+    isPendingAddPayment ||
+    isPendingPatchPayment;
 
   return !group || isLoading ? (
     <div>Loading...</div>
@@ -301,6 +334,15 @@ export function Group() {
         onSubmit={onAddPayment}
         users={users}
       />
+      {selectedPayment && (
+        <PatchPaymentModal
+          isOpen={patchPaymentModalOpen}
+          onClose={() => setPatchPaymentModalOpen(false)}
+          onSubmit={onPatchPayment}
+          payment={selectedPayment}
+        />
+      )}
+
       <div>
         <h1>Group: {group.name}</h1>
         <button onClick={() => setPatchGroupModalOpen(true)}>
@@ -364,6 +406,7 @@ export function Group() {
               <th>Amount</th>
               <th>Payer</th>
               <th>Payees</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -373,6 +416,16 @@ export function Group() {
                 <td>{payment.amount}</td>
                 <td>{payment.payer.name}</td>
                 <td>{payment.payees.map((p) => p.name).join(', ')}</td>
+                <td>
+                  <button
+                    onClick={() => {
+                      setSelectedPayment(payment);
+                      setPatchPaymentModalOpen(true);
+                    }}
+                  >
+                    Edit
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

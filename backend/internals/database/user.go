@@ -11,7 +11,7 @@ import (
 )
 
 func GetUsersByGroupID(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) ([]User, error) {
-	query := "SELECT id, name, balance FROM users WHERE users.group_id = @id"
+	query := "SELECT id, name, balance FROM users WHERE users.group_id = @id ORDER BY id"
 	args := pgx.StrictNamedArgs{
 		"id": id,
 	}
