@@ -8,5 +8,5 @@ export async function calculate(groupId: number): Promise<Owe[]> {
       Owe[],
       AxiosResponse
     >(`${import.meta.env.VITE_API_PREFIX}/groups/${groupId}/calculate`)
-    .then((res) => res.data);
+    .then((res) => res.data.ious);
 }

@@ -1,5 +1,12 @@
 import type { ReactNode } from 'react';
-import type { CreatePaymentRequest, PatchPaymentRequest, Payment, User } from 'src/types/common.type';
+
+import type {
+  CreatePaymentRequest,
+  Owe,
+  PatchPaymentRequest,
+  Payment,
+  User,
+} from 'src/types/common.type';
 
 interface DropdownOption {
   label: string;
@@ -68,4 +75,9 @@ export interface ConfirmationModalProps {
   title: string;
   content: string;
   onSubmit: () => void;
+}
+
+export interface OweDisplayProps {
+  users: User[];
+  owes: Owe[];
 }

@@ -7,9 +7,11 @@ import type { AxiosError } from 'axios';
 import { AddPaymentModal } from 'src/components/add-payment-modal.component';
 import { AddUserModal } from 'src/components/add-user-modal.component';
 import { ConfirmationModal } from 'src/components/confirmation-modal.component';
+import { OweDisplay } from 'src/components/owe-display.component';
 import { PatchGroupModal } from 'src/components/patch-group-modal.component';
 import { PatchPaymentModal } from 'src/components/patch-payment-modal.component';
 import { PatchUserModal } from 'src/components/patch-user-modal.component';
+import { calculate } from 'src/services/calculate.service';
 import {
   deleteGroup,
   getGroupById,
@@ -30,6 +32,7 @@ import {
 import type {
   CreatePaymentRequest,
   Group,
+  Owe,
   PatchPaymentRequest,
   Payment,
   User,
@@ -62,6 +65,9 @@ export function Group() {
     useState<boolean>(false);
 
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+
+  // owe states
+  const [owes, setOwes] = useState<Owe[]>([]);
 
   // group info
   const {
@@ -310,6 +316,25 @@ export function Group() {
       },
     );
 
+  // calculate a payment
+  const { mutate: calculateMutate, isPending: isPendingCalculate } =
+    useMutation<Owe[], AxiosError>({
+      mutationFn: () => {
+        return calculate(Number(groupId));
+      },
+    });
+  const onCalculate = () =>
+    calculateMutate(undefined, {
+      onSuccess: (data) => {
+        console.log('Calculated owes:', data);
+        setOwes(data);
+      },
+      onError: (error) => {
+        console.error('Error calculating owes:', error);
+        alert('Failed to calculate owes. Please try again');
+      },
+    });
+
   const isLoading =
     isFetchingGroup ||
     isPendingPatchGroup ||
@@ -321,7 +346,8 @@ export function Group() {
     isFetchingPayments ||
     isPendingAddPayment ||
     isPendingPatchPayment ||
-    isPendingDeletePayment;
+    isPendingDeletePayment ||
+    isPendingCalculate;
 
   return !group || isLoading ? (
     <div>Loading...</div>
@@ -489,6 +515,12 @@ export function Group() {
           </tbody>
         </table>
       </div>
+      <div>
+        <button onClick={onCalculate}>
+          Calculate
+        </button>
+      </div>
+      <OweDisplay users={users} owes={owes} />
     </>
   );
 }
