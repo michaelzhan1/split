@@ -45,7 +45,7 @@ func main() {
 		r.Post("/", handlers.CreateGroup(db, L))
 		r.Get("/{group_id}", handlers.GetGroup(db, L))
 		r.Patch("/{group_id}", handlers.PatchGroup(db, L))
-		r.Delete("/{group_id}", handlers.DeleteGroup(db, L)) // will need to figure out cascade delete
+		r.Delete("/{group_id}", handlers.DeleteGroup(db, L))
 
 		r.Get("/{group_id}/users", handlers.GetUsers(db, L))
 		r.Post("/{group_id}/users", handlers.AddUser(db, L))

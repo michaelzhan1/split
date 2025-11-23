@@ -1,0 +1,26 @@
+.multiselect-container {
+  position: relative;
+  display: inline-block;
+}
+
+.multiselect-input {
+  width: 100%;
+}
+
+.multiselect-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+
+  border: 1px solid #ccc;
+  border-top: none;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 1000;
+
+  > option:not:last-child {
+    border-bottom: 1px solid #eee;
+  }
+}

@@ -3,8 +3,35 @@ export interface Group {
   name: string;
 }
 
-export interface Member {
+export interface User {
   id: number;
   name: string;
   balance: number;
+}
+
+export interface Payment {
+  id: number;
+  description: string;
+  amount: number;
+  payer: User;
+  payees: User[];
+}
+
+export interface Owe {
+  from: number;
+  to: number;
+  amount: number;
+}
+
+export interface CreatePaymentRequest {
+  description: string;
+  amount: number;
+  payer_id: number;
+  payee_ids: number[];
+}
+
+export interface PatchPaymentRequest {
+  id: number;
+  amount: number | null;
+  description: string | null;
 }

@@ -9,8 +9,8 @@ WITH new_group AS (
     FROM new_group
     RETURNING id AS user_id, group_id
 ), new_payment AS (
-    INSERT INTO payment (group_id, amount, payer_id)
-    SELECT group_id, 100, user_id
+    INSERT INTO payment (group_id, description, amount, payer_id)
+    SELECT group_id, 'test description', 100, user_id
     FROM new_user
     RETURNING id as payment_id
 )

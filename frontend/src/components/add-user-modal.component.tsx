@@ -1,21 +1,16 @@
 import { useState } from 'react';
 
 import { Modal } from 'src/components/common/modal.component';
-import type { PatchGroupModalProps } from 'src/types/component.type';
+import type { AddUserModalProps } from 'src/types/component.type';
 
-export function PatchGroupModal({
-  isOpen,
-  onClose,
-  onSubmit,
-  initialName,
-}: PatchGroupModalProps) {
-  const [name, setName] = useState<string>(initialName);
+export function AddUserModal({ isOpen, onClose, onSubmit }: AddUserModalProps) {
+  const [name, setName] = useState<string>('');
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title='Edit Group'
+      title='Add User'
       onSubmit={() => {
         if (name === '') {
           alert('Name cannot be empty');
@@ -25,9 +20,9 @@ export function PatchGroupModal({
       }}
     >
       <form>
-        <label htmlFor='group-name-input'>Name</label>
+        <label htmlFor='user-name-input'>Name</label>
         <input
-          id='group-name-input'
+          id='user-name-input'
           value={name}
           onChange={(e) => setName(e.target.value)}
         />

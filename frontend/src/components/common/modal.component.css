@@ -13,6 +13,7 @@
 
 .modal {
   background-color: white;
+  /* background-color: gray; temp dark mode */
   min-width: 50%;
   display: flex;
   flex-direction: column;

@@ -152,8 +152,8 @@ func AddPayment(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 
 func PatchPayment(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 	type request struct {
-		Amount      *float32    `json:"amount"`
-		Description *string `json:"description"`
+		Amount      *float32 `json:"amount"`
+		Description *string  `json:"description"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -230,6 +230,13 @@ func PatchPayment(db *pgxpool.Pool, L *slog.Logger) http.HandlerFunc {
 			httpError = &HttpError{
 				Code:    http.StatusBadRequest,
 				Message: "Invalid amount field",
+			}
+			return
+		}
+		if body.Description != nil && *body.Description == "" {
+			httpError = &HttpError{
+				Code:    http.StatusBadRequest,
+				Message: "Invalid description field",
 			}
 			return
 		}

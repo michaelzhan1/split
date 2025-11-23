@@ -81,12 +81,24 @@ func PatchGroup(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int, n
 
 func DeleteGroup(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, id int) error {
 	_, err := WithTx(ctx, db, func(tx pgx.Tx) (struct{}, error) {
+		paymentQuery := "DELETE FROM payment WHERE group_id = @id"
+		paymentArgs := pgx.StrictNamedArgs{
+			"id": id,
+		}
+
+		L.Info("DeleteGroup.DeletePayments", "query", paymentQuery, "args", paymentArgs)
+		_, err := tx.Exec(ctx, paymentQuery, paymentArgs)
+		if err != nil {
+			L.Error(fmt.Sprintf("Delete failed: %v", err))
+			return struct{}{}, err
+		}
+
 		query := "DELETE FROM groups WHERE id = @id"
 		args := pgx.StrictNamedArgs{
 			"id": id,
 		}
 
-		L.Info("DeleteGroup", "query", query, "args", args)
+		L.Info("DeleteGroup.DeleteGroup", "query", query, "args", args)
 		cmdTag, err := tx.Exec(ctx, query, args)
 		if err != nil {
 			L.Error(fmt.Sprintf("Delete failed: %v", err))
