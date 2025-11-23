@@ -8,6 +8,7 @@ import { AddPaymentModal } from 'src/components/add-payment-modal.component';
 import { AddUserModal } from 'src/components/add-user-modal.component';
 import { ConfirmationModal } from 'src/components/confirmation-modal.component';
 import { PatchGroupModal } from 'src/components/patch-group-modal.component';
+import { PatchPaymentModal } from 'src/components/patch-payment-modal.component';
 import { PatchUserModal } from 'src/components/patch-user-modal.component';
 import {
   deleteGroup,
@@ -16,6 +17,7 @@ import {
 } from 'src/services/group.service';
 import {
   addPaymentToGroup,
+  deletePayment,
   getPaymentsByGroupId,
   patchPayment,
 } from 'src/services/payment.service';
@@ -32,7 +34,6 @@ import type {
   Payment,
   User,
 } from 'src/types/common.type';
-import { PatchPaymentModal } from 'src/components/patch-payment-modal.component';
 
 export function Group() {
   const { groupId = '' } = useParams();
@@ -55,11 +56,12 @@ export function Group() {
   // payment states
   const [addPaymentModalOpen, setAddPaymentModalOpen] =
     useState<boolean>(false);
-  const [patchPaymentModalOpen, setPatchPaymentModalOpen] = useState<boolean>(false);
+  const [patchPaymentModalOpen, setPatchPaymentModalOpen] =
+    useState<boolean>(false);
+  const [deletePaymentModalOpen, setDeletePaymentModalOpen] =
+    useState<boolean>(false);
 
-  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(
-    null,
-  );
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
 
   // group info
   const {
@@ -249,12 +251,23 @@ export function Group() {
         },
       },
     );
-  
+
   // patch a payment
   const { mutate: patchPaymentMutate, isPending: isPendingPatchPayment } =
-    useMutation<void, AxiosError, { paymentId: number; data: PatchPaymentRequest }>({
-      mutationFn: (variables: { paymentId: number; data: PatchPaymentRequest }) => {
-        return patchPayment(Number(groupId), variables.paymentId, variables.data);
+    useMutation<
+      void,
+      AxiosError,
+      { paymentId: number; data: PatchPaymentRequest }
+    >({
+      mutationFn: (variables: {
+        paymentId: number;
+        data: PatchPaymentRequest;
+      }) => {
+        return patchPayment(
+          Number(groupId),
+          variables.paymentId,
+          variables.data,
+        );
       },
     });
   const onPatchPayment = (paymentId: number, data: PatchPaymentRequest) =>
@@ -274,6 +287,29 @@ export function Group() {
       },
     );
 
+  // delete a payment
+  const { mutate: deletePaymentMutate, isPending: isPendingDeletePayment } =
+    useMutation<void, AxiosError, { paymentId: number }>({
+      mutationFn: (variables: { paymentId: number }) => {
+        return deletePayment(Number(groupId), variables.paymentId);
+      },
+    });
+  const onDeletePayment = (paymentId: number) =>
+    deletePaymentMutate(
+      { paymentId },
+      {
+        onSuccess: () => {
+          refetchPayments();
+          refetchUsers();
+          setSelectedPayment(null);
+        },
+        onError: (error) => {
+          console.error('Error deleting payment:', error);
+          alert('Failed to delete payment. Please try again');
+        },
+      },
+    );
+
   const isLoading =
     isFetchingGroup ||
     isPendingPatchGroup ||
@@ -284,7 +320,8 @@ export function Group() {
     isPendingDeleteUser ||
     isFetchingPayments ||
     isPendingAddPayment ||
-    isPendingPatchPayment;
+    isPendingPatchPayment ||
+    isPendingDeletePayment;
 
   return !group || isLoading ? (
     <div>Loading...</div>
@@ -335,12 +372,23 @@ export function Group() {
         users={users}
       />
       {selectedPayment && (
-        <PatchPaymentModal
-          isOpen={patchPaymentModalOpen}
-          onClose={() => setPatchPaymentModalOpen(false)}
-          onSubmit={onPatchPayment}
-          payment={selectedPayment}
-        />
+        <>
+          <PatchPaymentModal
+            isOpen={patchPaymentModalOpen}
+            onClose={() => setPatchPaymentModalOpen(false)}
+            onSubmit={onPatchPayment}
+            payment={selectedPayment}
+          />
+          <ConfirmationModal
+            isOpen={deletePaymentModalOpen}
+            onClose={() => setDeletePaymentModalOpen(false)}
+            title='Delete Payment'
+            content={`Are you sure you want to delete payment "${selectedPayment.description}"? This action cannot be undone.`}
+            onSubmit={() => {
+              onDeletePayment(selectedPayment.id);
+            }}
+          />
+        </>
       )}
 
       <div>
@@ -396,7 +444,9 @@ export function Group() {
         </table>
       </div>
       <div>
-        <button onClick={() => setAddPaymentModalOpen(true)}>Add payment</button>
+        <button onClick={() => setAddPaymentModalOpen(true)}>
+          Add payment
+        </button>
       </div>
       <div>
         <table>
@@ -424,6 +474,14 @@ export function Group() {
                     }}
                   >
                     Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedPayment(payment);
+                      setDeletePaymentModalOpen(true);
+                    }}
+                  >
+                    &times;
                   </button>
                 </td>
               </tr>

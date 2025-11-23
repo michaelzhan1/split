@@ -282,7 +282,7 @@ func DeletePayment(ctx context.Context, db *pgxpool.Pool, L *slog.Logger, paymen
 		}
 
 		// update payer
-		payerQuery := "UPDATE users SET balance = balance - @amount WHERE id = @id"
+		payerQuery := "UPDATE users SET balance = balance + @amount WHERE id = @id"
 		payerArgs := pgx.StrictNamedArgs{
 			"amount": payment.Amount,
 			"id":     payment.PayerID,
